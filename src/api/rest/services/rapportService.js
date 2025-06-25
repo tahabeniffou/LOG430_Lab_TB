@@ -1,9 +1,9 @@
-import Vente from '../../../models/Vente.js';
-import LigneVente from '../../../models/LigneVente.js';
-import Produit from '../../../models/Produit.js';
-import Magasin from '../../../models/Magasin.js';
+const Vente  = require( '../../../models/Vente.js');
+const LigneVente  = require( '../../../models/LigneVente.js');
+const Produit = require('../../../models/Produit.js');
+const Magasin  = require( '../../../models/Magasin.js');
 
-export default {
+ module.exports =  {
   async generer(type, { start, end }) {
     if (type === 'ventes') {
       return Vente.findAll({

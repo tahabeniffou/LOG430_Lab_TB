@@ -1,7 +1,7 @@
 
-import produitService from '../services/produitService.js';
+const produitService = require('../services/produitService.js');
 
-export default {
+ module.exports = {
   async lister(req, res, next) {
     try {
       const produits = await produitService.listerTous();

@@ -1,7 +1,6 @@
+const rapportService = require('../services/rapportService.js');
 
-import rapportService from '../services/rapportService.js';
-
-export default {
+ module.exports =  {
   async generer(req, res, next) {
     try {
       const { type, start, end } = req.query;

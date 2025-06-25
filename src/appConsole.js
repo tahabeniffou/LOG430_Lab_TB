@@ -3,7 +3,7 @@ const inquirer   = require('inquirer');
 const { Separator } = require('inquirer');
 const axios      = require('axios');
 
-const API_URL = 'http://localhost:3000/api/v1';
+const API_URL = 'http://api:3000/api/v1';
 
 // 🔒 Sélection de la succursale (magasin)
 async function selectionnerMagasin() {

@@ -1,6 +1,6 @@
-import Produit from '../../../models/Produit.js';
+const Produit  = require('../../../models/Produit.js');
 
-export default {
+ module.exports = {
   listerTous() {
     return Produit.findAll();
   },

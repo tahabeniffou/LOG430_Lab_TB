@@ -1,7 +1,6 @@
-import Vente from '../../../models/Vente.js';
-import LigneVente from '../../../models/LigneVente.js';
+const Produit = require('../../../models/Produit.js');
 
-export default {
+ module.exports =  {
   listerTous() {
     return Produit.findAll();
   },

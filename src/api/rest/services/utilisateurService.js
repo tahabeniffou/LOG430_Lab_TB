@@ -1,7 +1,7 @@
-import Utilisateur from '../../../models/Utilisateur.js';
+const  Utilisateur =require ('../../../models/Utilisateur.js');
 
 
-export default {
+ module.exports =  {
   listerTous() {
     return Utilisateur.findAll();
   },

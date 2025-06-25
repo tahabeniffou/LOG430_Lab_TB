@@ -1,7 +1,7 @@
 
-import venteService from '../services/venteService.js';
+const venteService = require('../services/venteService.js');
 
-export default {
+ module.exports =  {
   async lister(req, res, next) {
     try {
       const ventes = await venteService.listerToutes();

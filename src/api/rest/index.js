@@ -1,15 +1,14 @@
+// src/api/rest/index.js
+const express = require('express');
+const produitsRoutes  = require('./routes/produit');
+const rapportsRoutes  = require('./routes/rapport');
 
-import express from 'express';
-import produitRoutes from './routes/produit.js';
-import venteRoutes   from './routes/vente.js';
-import rapportRoutes from './routes/rapport.js';
-import userRoutes    from './routes/utilisateur.js';
 
- const router = express.Router();
+const router = express.Router();
 
-router.use('/produits',     produitRoutes);
-router.use('/ventes',       venteRoutes);
-router.use('/rapports',     rapportRoutes);
-router.use('/utilisateurs', userRoutes);
+router.use('/produits', produitsRoutes);
+router.use('/rapports',  rapportsRoutes);
+router.use('/magasins', require('./routes/magasins'));
 
- export default router;
+
+module.exports = router; 

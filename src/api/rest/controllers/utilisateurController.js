@@ -1,7 +1,7 @@
 
-import utilisateurService from '../services/utilisateurService.js';
+const utilisateurService = require('../services/utilisateurService.js');
 
-export default {
+ module.exports =  {
   async lister(req, res, next) {
     try {
       const users = await utilisateurService.listerTous();

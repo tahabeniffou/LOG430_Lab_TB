@@ -1,6 +1,7 @@
 {
   "name": "log430_lab0_tb",
   "version": "1.0.0",
+  "type": "commonjs",
   "description": "Repos pour le lab de log430",
   "main": "index.js",
   "scripts": {

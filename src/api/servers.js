@@ -1,40 +1,83 @@
 // src/api/servers.js
+
 require('dotenv').config();
 const express       = require('express');
 const cors          = require('cors');
-const restModule    = require('./rest/index.js');
-const restApi       = restModule.default || restModule;
-const swaggerModule = require('./rest/swagger.js');
-const swaggerSpec   = swaggerModule.swaggerSpec || swaggerModule.default || swaggerModule;
+const restApi       = require('./rest');    // ← c’est maintenant un Router
+const swaggerJsdoc  = require('swagger-jsdoc');
 const swaggerUi     = require('swagger-ui-express');
 const redocExpress  = require('redoc-express');
 
 const app = express();
 
+// CORS & JSON body parsing
 app.use(cors({ origin: process.env.CORS_ORIGINS?.split(',') || '*' }));
 app.use(express.json());
 
+// 0) route racine pour éviter le "pending" sur "/"
+app.get('/', (req, res) => {
+  // ou res.redirect('/api-docs');
+  res.send('🚀 API LOG430 Lab TB POS – en marche !');
+});
+
+// 1) votre API REST
 app.use('/api/v1', restApi);
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
-app.get('/api-docs/swagger.json', (req, res) => res.json(swaggerSpec));
+// 2) génération du spec OpenAPI à partir de vos JSDoc dans les routes
+const swaggerSpec = swaggerJsdoc({
+  definition: {
+    openapi: '3.0.3',
+    info: {
+      title:       'LOG430 Lab TB POS API',
+      version:     '1.0.0',
+      description: 'Documentation des endpoints REST pour le POS et la maison-mère'
+    },
+    servers: [{ url: 'http://localhost:3000/api/v1' }]
+  },
+  apis: [__dirname + '/rest/routes/*.js']
+});
+
+// 3) point d’entrée Swagger-UI
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, { explorer: true })
+);
+
+// 4) point d’accès ReDoc (facultatif)
 app.get(
   '/redoc',
   redocExpress({
-    title: 'API LOG430 Lab TB POS',
+    title:   'API LOG430 Lab TB POS',
     specUrl: '/api-docs/swagger.json'
   })
 );
 
+// 5) servir le JSON brut pour Redoc
+app.get('/api-docs/swagger.json', (req, res) => {
+  res.json(swaggerSpec);
+});
+
+// 6) handler “catch-all” pour les 404
+app.use((req, res) => {
+  res.status(404).json({
+    timestamp: new Date().toISOString(),
+    status:    404,
+    error:     'Not Found',
+    message:   `Pas de route pour ${req.originalUrl}`,
+    path:      req.originalUrl
+  });
+});
+
+// 7) handler d’erreurs (500, etc.)
 app.use((err, req, res, next) => {
   console.error(err);
-  const status = err.status || 500;
-  res.status(status).json({
+  res.status(err.status || 500).json({
     timestamp: new Date().toISOString(),
-    status,
-    error:   err.name,
-    message: err.message,
-    path:    req.originalUrl
+    status:    err.status || 500,
+    error:     err.name,
+    message:   err.message,
+    path:      req.originalUrl
   });
 });
 
