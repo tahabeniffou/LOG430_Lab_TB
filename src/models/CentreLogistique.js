@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('./index');
+const sequelize = require('./db');
 
 const CentreLogistique = sequelize.define('CentreLogistique', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },

@@ -1,8 +1,11 @@
-const Produit  = require('../../../models/Produit.js');
+const Produit = require('../../../models/Produit.js');
 
- module.exports = {
-  listerTous() {
-    return Produit.findAll();
+module.exports =  {
+  listerTous(magasinId, nom) {
+    const where = {};
+    if (magasinId) where.magasinId = magasinId;
+    if (nom) where.nom = nom;
+    return Produit.findAll({ where });
   },
 
   trouverParId(id) {

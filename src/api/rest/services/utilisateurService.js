@@ -1,7 +1,6 @@
-const  Utilisateur =require ('../../../models/Utilisateur.js');
+const Utilisateur = require('../../../models/Utilisateur.js');
 
-
- module.exports =  {
+module.exports =  {
   listerTous() {
     return Utilisateur.findAll();
   },

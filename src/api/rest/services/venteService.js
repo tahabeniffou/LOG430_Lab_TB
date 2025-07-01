@@ -1,6 +1,7 @@
 const Produit = require('../../../models/Produit.js');
+const Vente = require('../../../models/Vente.js');
 
- module.exports =  {
+module.exports =  {
   listerTous() {
     return Produit.findAll();
   },
@@ -20,5 +21,9 @@ const Produit = require('../../../models/Produit.js');
 
   supprimer(id) {
     return Produit.destroy({ where: { id } });
+  },
+
+  listerToutes() {
+    return Vente.findAll();
   }
 };

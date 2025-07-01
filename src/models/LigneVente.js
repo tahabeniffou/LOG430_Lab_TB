@@ -1,16 +1,12 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('./index');
-const Vente = require('./Vente');
-const Produit = require('./Produit');
+const sequelize = require('./db');
 
 const LigneVente = sequelize.define('LigneVente', {
   quantite: DataTypes.INTEGER,
   sousTotal: DataTypes.FLOAT,
-  magasinId: { type: DataTypes.INTEGER, allowNull: false }
+  venteId: { type: DataTypes.INTEGER, allowNull: false },
+  produitId: { type: DataTypes.INTEGER, allowNull: false },
+  magasinId: { type: DataTypes.INTEGER, allowNull: true }
 });
-
-LigneVente.belongsTo(Vente);
-LigneVente.belongsTo(Produit);
-Vente.hasMany(LigneVente);
 
 module.exports = LigneVente;

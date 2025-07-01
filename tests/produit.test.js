@@ -1,26 +1,26 @@
 const { Sequelize, DataTypes } = require('sequelize');
 
-let sequelize, Produit;
+describe('Produit', function() {
+  let sequelize, Produit;
 
-beforeAll(async () => {
-  sequelize = new Sequelize('sqlite::memory:', { logging: false });
-
-  Produit = sequelize.define('Produit', {
-    nom: DataTypes.STRING,
-    prix: DataTypes.FLOAT,
-    stock: DataTypes.INTEGER
+  before(async function() {
+    sequelize = new Sequelize('sqlite::memory:', { logging: false });
+    Produit = sequelize.define('Produit', {
+      nom: DataTypes.STRING,
+      prix: DataTypes.FLOAT,
+      stock: DataTypes.INTEGER
+    });
+    await sequelize.sync({ force: true });
   });
 
-  await sequelize.sync({ force: true });
-});
+  after(async function() {
+    await sequelize.close();
+  });
 
-afterAll(async () => {
-  await sequelize.close();
-});
-
-test('Créer un produit valide', async () => {
-  const p = await Produit.create({ nom: 'Fanta', prix: 2.0, stock: 20 });
-  expect(p.nom).toBe('Fanta');
-  expect(p.prix).toBeGreaterThan(0);
-  expect(p.stock).toBeGreaterThanOrEqual(0);
+  it('Créer un produit valide', async function() {
+    const p = await Produit.create({ nom: 'Fanta', prix: 2.0, stock: 20 });
+    if (p.nom !== 'Fanta') throw new Error('Nom incorrect');
+    if (!(p.prix > 0)) throw new Error('Prix incorrect');
+    if (!(p.stock >= 0)) throw new Error('Stock incorrect');
+  });
 });

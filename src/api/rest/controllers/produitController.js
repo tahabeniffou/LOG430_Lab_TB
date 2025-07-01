@@ -1,10 +1,10 @@
-
 const produitService = require('../services/produitService.js');
 
  module.exports = {
   async lister(req, res, next) {
     try {
-      const produits = await produitService.listerTous();
+      const { magasinId, nom } = req.query;
+      const produits = await produitService.listerTous(magasinId, nom);
       res.json(produits);
     } catch (err) { next(err); }
   },

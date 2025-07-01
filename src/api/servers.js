@@ -1,18 +1,40 @@
 // src/api/servers.js
 
 require('dotenv').config();
+require('../models/associations');
 const express       = require('express');
 const cors          = require('cors');
 const restApi       = require('./rest');    // ← c’est maintenant un Router
 const swaggerJsdoc  = require('swagger-jsdoc');
 const swaggerUi     = require('swagger-ui-express');
 const redocExpress  = require('redoc-express');
+const logger = require('./logger');
+const client = require('prom-client');
+const { metricsMiddleware } = require('./metrics');
 
 const app = express();
 
-// CORS & JSON body parsing
+// 1) Exposer /metrics directement ici (plus besoin de metricsRouter)
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType);
+  res.end(await client.register.metrics());
+});
+
+// 2) Middlewares globaux
 app.use(cors({ origin: process.env.CORS_ORIGINS?.split(',') || '*' }));
 app.use(express.json());
+app.use(metricsMiddleware); // Ajout du middleware Prometheus juste après les middlewares globaux
+
+// Logging structuré pour toutes les requêtes
+app.use((req, res, next) => {
+  logger.info({
+    message: 'Requête entrante',
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip
+  });
+  next();
+});
 
 // 0) route racine pour éviter le "pending" sur "/"
 app.get('/', (req, res) => {
@@ -71,7 +93,12 @@ app.use((req, res) => {
 
 // 7) handler d’erreurs (500, etc.)
 app.use((err, req, res, next) => {
-  console.error(err);
+  logger.error({
+    message: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    status: err.status || 500
+  });
   res.status(err.status || 500).json({
     timestamp: new Date().toISOString(),
     status:    err.status || 500,

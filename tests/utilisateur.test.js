@@ -1,24 +1,25 @@
 const { Sequelize, DataTypes } = require('sequelize');
 
-// 1. Base en mémoire (spécialement pour les tests)
-const sequelize = new Sequelize('sqlite::memory:', { logging: false });
+describe('Utilisateur', function() {
+  let sequelize;
+  let Utilisateur;
 
-// 2. Définir un modèle simple pour tester
-const Utilisateur = sequelize.define('Utilisateur', {
-  nom: DataTypes.STRING,
-  role: DataTypes.STRING
-});
+  before(async function() {
+    sequelize = new Sequelize('sqlite::memory:', { logging: false });
+    Utilisateur = sequelize.define('Utilisateur', {
+      nom: DataTypes.STRING,
+      role: DataTypes.STRING
+    });
+    await sequelize.sync({ force: true });
+  });
 
-beforeAll(async () => {
-  await sequelize.sync({ force: true });
-});
+  after(async function() {
+    await sequelize.close();
+  });
 
-afterAll(async () => {
-  await sequelize.close();
-});
-
-test('Créer un utilisateur', async () => {
-  const u = await Utilisateur.create({ nom: 'Taha', role: 'Admin' });
-  expect(u.nom).toBe('Taha');
-  expect(u.role).toBe('Admin');
+  it('Créer un utilisateur', async function() {
+    const u = await Utilisateur.create({ nom: 'Taha', role: 'Admin' });
+    if (u.nom !== 'Taha') throw new Error('Nom incorrect');
+    if (u.role !== 'Admin') throw new Error('Role incorrect');
+  });
 });

@@ -1,10 +1,11 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('./index');
+const sequelize = require('./db');
 
 const Utilisateur = sequelize.define('Utilisateur', {
-  nom: DataTypes.STRING,
-  role: DataTypes.STRING,
-  magasinId: { type: DataTypes.INTEGER, allowNull: false }
+  nom: { type: DataTypes.STRING, allowNull: false },
+  prenom: DataTypes.STRING,
+  courriel: DataTypes.STRING,
+  magasinId: { type: DataTypes.INTEGER, allowNull: true }
 });
 
 module.exports = Utilisateur;

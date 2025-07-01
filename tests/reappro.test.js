@@ -1,39 +1,35 @@
 const { Sequelize, DataTypes } = require('sequelize');
 
-let sequelize, Produit, DemandeReappro;
+describe('DemandeReappro', function() {
+  let sequelize, Produit, DemandeReappro;
 
-beforeAll(async () => {
-  sequelize = new Sequelize('sqlite::memory:', { logging: false });
-
-  Produit = sequelize.define('Produit', {
-    nom: DataTypes.STRING,
-    prix: DataTypes.FLOAT,
-    stock: DataTypes.INTEGER
+  before(async function() {
+    sequelize = new Sequelize('sqlite::memory:', { logging: false });
+    Produit = sequelize.define('Produit', {
+      nom: DataTypes.STRING,
+      prix: DataTypes.FLOAT,
+      stock: DataTypes.INTEGER
+    });
+    DemandeReappro = sequelize.define('DemandeReappro', {
+      produitId: DataTypes.INTEGER,
+      quantite: DataTypes.INTEGER,
+      date: DataTypes.DATE
+    });
+    Produit.hasMany(DemandeReappro, { foreignKey: 'produitId' });
+    DemandeReappro.belongsTo(Produit, { foreignKey: 'produitId' });
+    await sequelize.sync({ force: true });
   });
 
-  DemandeReappro = sequelize.define('DemandeReappro', {
-    produitId: DataTypes.INTEGER,
-    quantite: DataTypes.INTEGER,
-    date: DataTypes.DATE
+  after(async function() {
+    await sequelize.close();
   });
 
-  Produit.hasMany(DemandeReappro, { foreignKey: 'produitId' });
-  DemandeReappro.belongsTo(Produit, { foreignKey: 'produitId' });
-
-  await sequelize.sync({ force: true });
-});
-
-afterAll(async () => {
-  await sequelize.close();
-});
-
-test('Créer une demande de réapprovisionnement', async () => {
-  const produit = await Produit.create({ nom: 'Pepsi', prix: 2.3, stock: 80 });
-  const demande = await DemandeReappro.create({ produitId: produit.id, quantite: 5, date: new Date() });
-
-  expect(demande.produitId).toBe(produit.id);
-  expect(demande.quantite).toBe(5);
-
-  const demandes = await DemandeReappro.findAll({ where: { produitId: produit.id } });
-  expect(demandes.length).toBe(1);
+  it('Créer une demande de réapprovisionnement', async function() {
+    const produit = await Produit.create({ nom: 'Pepsi', prix: 2.3, stock: 80 });
+    const demande = await DemandeReappro.create({ produitId: produit.id, quantite: 5, date: new Date() });
+    if (demande.produitId !== produit.id) throw new Error('ProduitId incorrect');
+    if (demande.quantite !== 5) throw new Error('Quantité incorrecte');
+    const demandes = await DemandeReappro.findAll({ where: { produitId: produit.id } });
+    if (demandes.length !== 1) throw new Error('Demande non retrouvée');
+  });
 });

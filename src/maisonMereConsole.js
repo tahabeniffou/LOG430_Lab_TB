@@ -4,7 +4,7 @@ const axios    = require('axios');
 const Table    = require('cli-table3');
 const chalk    = require('chalk').default;
 
-const API_URL = 'http://localhost:3000/api/v1';
+const API_URL = process.env.API_URL || 'http://localhost:3000/api/v1';
 
 function resetConsole() {
   console.clear();
@@ -66,9 +66,14 @@ async function mainMenu() {
 
       console.log(chalk.bold(chalk.cyan('\n=== Tableau de bord des magasins ===\n')));
       dashboard.forEach(d => {
-        console.log(chalk.bold(`🏬 ${d.magasin.nom} (${d.magasin.adresse})`));
-        console.log(chalk.green(`Chiffre d'affaires: $${d.chiffreAffaires.toFixed(2)}`));
-
+        if (d.Magasin) {
+          console.log(chalk.bold(`🏬 ${d.Magasin.nom} (${d.Magasin.adresse})`));
+        } else {
+          console.log(chalk.red('Magasin inconnu'));
+        }
+        if (typeof d.chiffreAffaires === 'number') {
+          console.log(chalk.green(`Chiffre d'affaires: $${d.chiffreAffaires.toFixed(2)}`));
+        }
         if (d.ruptures?.length) {
           console.log(chalk.red(`⚠️ Ruptures de stock: ${d.ruptures.join(', ')}`));
         }

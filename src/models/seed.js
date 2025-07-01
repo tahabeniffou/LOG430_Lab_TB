@@ -1,4 +1,4 @@
-const sequelize = require('./index');
+const sequelize = require('./db');
 const Magasin = require('./Magasin');
 const CentreLogistique = require('./CentreLogistique');
 const Categorie = require('./Categorie');

@@ -6,7 +6,10 @@ const rapportService = require('../services/rapportService.js');
       const { type, start, end } = req.query;
       const data = await rapportService.generer(type, { start, end });
       res.json(data);
-    } catch (err) { next(err); }
+    } catch (err) {
+      console.error('Erreur rapport:', err);
+      next(err);
+    }
   },
 
   async recuperer(req, res, next) {
