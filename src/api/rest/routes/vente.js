@@ -164,6 +164,7 @@ router
   .get('/:id',   venteController.recuperer)
   .post('/',     venteController.creer)
   .put('/:id',   venteController.mettreAJour)
-  .delete('/:id',venteController.supprimer);
+  .delete('/:id',venteController.supprimer)
+  .post('/:id/annuler', venteController.annuler);
 
 module.exports=  router;

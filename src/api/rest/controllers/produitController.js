@@ -36,5 +36,19 @@ const produitService = require('../services/produitService.js');
       await produitService.supprimer(req.params.id);
       res.status(204).end();
     } catch (err) { next(err); }
+  },
+
+  async stock(req, res, next) {
+    try {
+      const { magasinId } = req.query;
+      if (!magasinId) return res.status(400).json({ message: 'magasinId requis' });
+      const produits = await produitService.listerTous(magasinId);
+      res.json(produits.map(p => ({ nom: p.nom, stock: p.stock })));
+    } catch (err) { next(err); }
+  },
+
+  // Route de test pour générer une erreur 500
+  erreur500(req, res, next) {
+    next(new Error('Erreur 500 de test'));
   }
 };

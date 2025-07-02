@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUtilisateursByMagasin } = require('../controllers/magasinController');
+const { getUtilisateursByMagasin, creerMagasin } = require('../controllers/magasinController');
 const Magasin = require('../../../models/Magasin');
 
 router.get('/', async (req, res) => {
@@ -14,17 +14,6 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id/utilisateurs', getUtilisateursByMagasin);
-router.post('/', async (req, res) => {
-  try {
-    const { nom, adresse } = req.body;
-    if (!nom || !adresse) {
-      return res.status(400).json({ message: 'Nom et adresse requis' });
-    }
-    const magasin = await Magasin.create({ nom, adresse });
-    res.status(201).json(magasin);
-  } catch (err) {
-    res.status(500).json({ message: 'Erreur serveur' });
-  }
-});
+router.post('/', creerMagasin);
 
 module.exports = router;

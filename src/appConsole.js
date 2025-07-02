@@ -1,9 +1,8 @@
-
 const inquirer   = require('inquirer');
 const { Separator } = require('inquirer');
 const axios      = require('axios');
 
-const API_URL = 'http://api:3000/api/v1';
+const API_URL = 'http://nginx-lb:80/api/v1';
 
 // 🔒 Sélection de la succursale (magasin)
 async function selectionnerMagasin() {
@@ -42,7 +41,25 @@ async function selectionnerUtilisateur(magasinId) {
       value: u.id
     }))
   }]);
-  return utilisateurs.find(u => u.id === utilisateurId);
+  // Demander le mot de passe
+  const { motDePasse } = await inquirer.prompt([{
+    type: 'password',
+    name: 'motDePasse',
+    message: '🔑 Mot de passe du caissier :',
+    mask: '*'
+  }]);
+  // Authentifier via l'API
+  const user = utilisateurs.find(u => u.id === utilisateurId);
+  try {
+    const { data: userAuth } = await axios.post(`${API_URL}/utilisateurs/auth`, {
+      nom: user.nom,
+      motDePasse
+    });
+    return userAuth;
+  } catch (e) {
+    console.log('❌ Mot de passe incorrect.');
+    process.exit(1);
+  }
 }
 
 // 🧭 Menu principal
@@ -81,7 +98,7 @@ async function mainMenu(utilisateur, magasin) {
           console.log('❌ Aucun produit trouvé.');
         } else {
           results.forEach(p =>
-            console.log(`🔸 ${p.nom} (${p.categorie?.nom || 'Sans catégorie'}) – $${p.prix} | Stock: ${p.stock}`)
+            console.log(`🔸 ${p.nom} – $${p.prix} | Stock: ${p.stock}`)
           );
         }
         await pause();
@@ -181,7 +198,7 @@ async function mainMenu(utilisateur, magasin) {
         );
         console.log('\n📦 État du stock :\n');
         stock.forEach(p =>
-          console.log(`- ${p.nom} (${p.categorie?.nom || 'Sans catégorie'}) – Stock: ${p.stock}`)
+          console.log(`- ${p.nom} – Stock: ${p.stock}`)
         );
         await pause();
         break;

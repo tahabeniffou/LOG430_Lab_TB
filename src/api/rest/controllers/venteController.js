@@ -1,4 +1,3 @@
-
 const venteService = require('../services/venteService.js');
 
  module.exports =  {
@@ -35,6 +34,13 @@ const venteService = require('../services/venteService.js');
     try {
       await venteService.supprimer(req.params.id);
       res.status(204).end();
+    } catch (err) { next(err); }
+  },
+
+  async annuler(req, res, next) {
+    try {
+      const result = await venteService.annuler(req.params.id);
+      res.status(200).json(result);
     } catch (err) { next(err); }
   }
 };

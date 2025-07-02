@@ -20,5 +20,10 @@ module.exports =  {
 
   supprimer(id) {
     return Utilisateur.destroy({ where: { id } });
+  },
+
+  async authentifier(nom, motDePasse) {
+    if (!nom || !motDePasse) return null;
+    return Utilisateur.findOne({ where: { nom, motDePasse } });
   }
 };

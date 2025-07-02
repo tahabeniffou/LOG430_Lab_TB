@@ -167,14 +167,18 @@
 
 const Router = require('express');
 const produitController = require('../controllers/produitController.js');
-
 const router = Router();
 
 router
-  .get('/',      produitController.lister)
-  .get('/:id',   produitController.recuperer)
-  .post('/',     produitController.creer)
-  .put('/:id',   produitController.mettreAJour)
-  .delete('/:id',produitController.supprimer);
+  .get('/', produitController.lister)
+  .get('/stock', produitController.stock)
+  .get('/erreur500', produitController.erreur500)
+  .get('/:id', produitController.recuperer)
+  .post('/', produitController.creer)
+  .put('/:id', produitController.mettreAJour)
+  .delete('/:id', produitController.supprimer);
 
-module.exports =  router;
+module.exports = router;
+
+// Correction : placer '/stock' avant '/:id' pour éviter les collisions de routes
+// (déjà correct dans l'ordre ci-dessus, mais on s'assure que '/stock' précède '/:id')

@@ -158,6 +158,7 @@ const router = Router();
 
 router
   .get('/',      utilisateurController.lister)
+  .post('/auth', utilisateurController.login)
   .get('/:id',   utilisateurController.recuperer)
   .post('/',     utilisateurController.creer)
   .put('/:id',   utilisateurController.mettreAJour)

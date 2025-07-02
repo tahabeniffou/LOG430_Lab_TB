@@ -1,4 +1,3 @@
-
 const utilisateurService = require('../services/utilisateurService.js');
 
  module.exports =  {
@@ -35,6 +34,18 @@ const utilisateurService = require('../services/utilisateurService.js');
     try {
       await utilisateurService.supprimer(req.params.id);
       res.status(204).end();
+    } catch (err) { next(err); }
+  },
+
+  async login(req, res, next) {
+    try {
+      // Accepte login ou nom
+      const nom = req.body.login || req.body.nom;
+      const { motDePasse } = req.body;
+      if (!nom || !motDePasse) return res.status(400).json({ message: 'Champs manquants' });
+      const user = await utilisateurService.authentifier(nom, motDePasse);
+      if (!user) return res.status(401).json({ message: 'Identifiants invalides' });
+      res.json(user);
     } catch (err) { next(err); }
   }
 };

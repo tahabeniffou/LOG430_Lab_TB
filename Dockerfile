@@ -1,7 +1,25 @@
-FROM node:20
+FROM node:20-alpine
+
 WORKDIR /app
+
+# Copier les fichiers de dépendances
 COPY package*.json ./
-RUN npm install
-RUN apt-get update && apt-get install -y netcat-openbsd
+
+# Installer les dépendances
+RUN npm ci --only=production
+
+# Copier le code source
 COPY . .
-CMD ./wait-for-it.sh db:5432 -- node src/models/seed.js && node src/api/servers.js
+
+# Installer netcat pour les health checks
+RUN apk add --no-cache netcat-openbsd curl
+
+# Exposer le port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/ || exit 1
+
+# Commande par défaut
+CMD ["node", "server.js"]

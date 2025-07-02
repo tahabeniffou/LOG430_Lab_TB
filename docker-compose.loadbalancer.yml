@@ -1,0 +1,137 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    container_name: pos-db
+    environment:
+      POSTGRES_USER: posuser
+      POSTGRES_PASSWORD: pospass
+      POSTGRES_DB: posdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  api1:
+    build: .
+    container_name: api1
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=posuser
+      - DB_PASS=pospass
+      - DB_NAME=posdb
+    ports:
+      - "3001:3000"
+    depends_on:
+      - db
+      - prometheus
+
+  api2:
+    build: .
+    container_name: api2
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=posuser
+      - DB_PASS=pospass
+      - DB_NAME=posdb
+    ports:
+      - "3002:3000"
+    depends_on:
+      - db
+      - prometheus
+
+  api3:
+    build: .
+    container_name: api3
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=posuser
+      - DB_PASS=pospass
+      - DB_NAME=posdb
+    ports:
+      - "3003:3000"
+    depends_on:
+      - db
+      - prometheus
+
+  api4:
+    build: .
+    container_name: api4
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=posuser
+      - DB_PASS=pospass
+      - DB_NAME=posdb
+    ports:
+      - "3004:3000"
+    depends_on:
+      - db
+      - prometheus
+
+  appconsole:
+    build: .
+    container_name: app-console
+    command: node src/appConsole.js
+    depends_on:
+      - db
+      - nginx
+    tty: true
+    stdin_open: true
+
+  maisonmereconsole:
+    build: .
+    container_name: maison-mere-console
+    command: node src/maisonMereConsole.js
+    depends_on:
+      - db
+      - nginx
+    tty: true
+    stdin_open: true
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-lb
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api1
+      - api2
+      - api3
+      - api4
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3030:3000"
+    depends_on:
+      - prometheus
+
+  seed:
+    build: .
+    command: node src/models/seed.js
+    depends_on:
+      - db
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=posuser
+      - DB_PASS=pospass
+      - DB_NAME=posdb
+
+volumes:
+  db_data:
