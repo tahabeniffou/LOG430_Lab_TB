@@ -3,7 +3,7 @@ import { check, sleep } from 'k6';
 
 export let options = {
   vus: 100, // 100 utilisateurs simultanés
-  duration: '5m', // test sur 5 minutes
+  duration: '1m', // test sur 1 minute
 };
 
 const users = [

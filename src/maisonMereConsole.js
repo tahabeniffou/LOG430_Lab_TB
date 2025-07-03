@@ -4,7 +4,7 @@ const axios    = require('axios');
 const Table    = require('cli-table3');
 const chalk    = require('chalk').default;
 
-const API_URL = process.env.API_URL || 'http://localhost:3000/api/v1';
+const API_URL = process.env.API_URL || 'http://loadbalancer:8000/api/v1';
 
 function resetConsole() {
   console.clear();

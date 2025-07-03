@@ -2,7 +2,7 @@ const inquirer   = require('inquirer');
 const { Separator } = require('inquirer');
 const axios      = require('axios');
 
-const API_URL = 'http://nginx-lb:80/api/v1';
+const API_URL = 'http://loadbalancer:8000/api/v1';
 
 // 🔒 Sélection de la succursale (magasin)
 async function selectionnerMagasin() {

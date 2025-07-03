@@ -1,0 +1,184 @@
+version: '3.8'
+
+networks:
+  custom_network:
+    driver: bridge
+
+services:
+  db:
+    image: postgres:15
+    container_name: db
+    environment:
+      POSTGRES_DB: posdb
+      POSTGRES_USER: posuser
+      POSTGRES_PASSWORD: pospass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "posuser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - custom_network
+
+  api1:
+    build: .
+    image: log430_lab_tb_api
+    container_name: api1
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_HOST: db
+      DB_NAME: posdb
+      DB_USER: posuser
+      DB_PASS: pospass
+    depends_on:
+      - db
+    networks:
+      - custom_network
+
+  api2:
+    build: .
+    image: log430_lab_tb_api
+    container_name: api2
+    ports:
+      - "3002:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_HOST: db
+      DB_NAME: posdb
+      DB_USER: posuser
+      DB_PASS: pospass
+    depends_on:
+      - db
+    networks:
+      - custom_network
+
+  api3:
+    build: .
+    image: log430_lab_tb_api
+    container_name: api3
+    ports:
+      - "3003:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_HOST: db
+      DB_NAME: posdb
+      DB_USER: posuser
+      DB_PASS: pospass
+    depends_on:
+      - db
+    networks:
+      - custom_network
+
+  api4:
+    build: .
+    image: log430_lab_tb_api
+    container_name: api4
+    ports:
+      - "3004:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_HOST: db
+      DB_NAME: posdb
+      DB_USER: posuser
+      DB_PASS: pospass
+    depends_on:
+      - db
+    networks:
+      - custom_network
+
+  app-console:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: log430_lab_tb_app_console
+    container_name: app-console
+    entrypoint: ["sh", "./wait-for-it.sh", "api1:3000", "--", "node", "src/appConsole.js"]
+    environment:
+      API_URL: http://loadbalancer:80/api/v1
+    stdin_open: true
+    tty: true
+    depends_on:
+      - api1
+    networks:
+      - custom_network
+
+  maison-mere-console:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: log430_lab_tb_maison_mere_console
+    container_name: maison-mere-console
+    entrypoint: ["sh", "./wait-for-it.sh", "api1:3000", "--", "node", "src/maisonMereConsole.js"]
+    environment:
+      API_URL: http://loadbalancer:80/api/v1
+    stdin_open: true
+    tty: true
+    depends_on:
+      - api1
+    networks:
+      - custom_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - metrics-server
+    networks:
+      - custom_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - custom_network
+
+  metrics-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: metrics-server
+    command: node src/api/metricsServer.js
+    ports:
+      - "4000:4000"
+    restart: unless-stopped
+    networks:
+      - custom_network
+
+  loadbalancer:
+    image: nginx:latest
+    container_name: loadbalancer
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - api1
+      - api2
+      - api3
+      - api4
+      - prometheus
+      - grafana
+    networks:
+      - custom_network
+
+volumes:
+  pgdata:
+  db_data:

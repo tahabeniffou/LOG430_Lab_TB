@@ -2,7 +2,7 @@ const { Sequelize } = require('sequelize');
 let sequelize;
 
 if (process.env.NODE_ENV === 'test' || !process.env.DB_HOST) {
-  sequelize = new Sequelize('sqlite::memory:', { logging: false });
+  sequelize = new Sequelize('sqlite:./test-database.sqlite', { logging: false });
 } else {
   sequelize = new Sequelize(
     process.env.DB_NAME   || 'posdb',
