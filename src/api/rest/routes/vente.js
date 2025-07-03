@@ -155,16 +155,18 @@
  */
 
 const Router = require('express');
-const venteController  = require('../controllers/venteController.js');
+const venteController = require('../controllers/venteController.js');
+const { invalidateCacheMiddleware } = require('../../cache/cacheMiddleware');
+const { invalidationPatterns } = require('../../cache/cacheConfig');
 
 const router = Router();
 
 router
-  .get('/',      venteController.lister)
-  .get('/:id',   venteController.recuperer)
-  .post('/',     venteController.creer)
-  .put('/:id',   venteController.mettreAJour)
-  .delete('/:id',venteController.supprimer)
-  .post('/:id/annuler', venteController.annuler);
+  .get('/', venteController.lister)
+  .get('/:id', venteController.recuperer)
+  .post('/', invalidateCacheMiddleware(invalidationPatterns.rapports.onVenteCreated), venteController.creer)
+  .put('/:id', invalidateCacheMiddleware(invalidationPatterns.rapports.onVenteCreated), venteController.mettreAJour)
+  .delete('/:id', invalidateCacheMiddleware(invalidationPatterns.rapports.onVenteCreated), venteController.supprimer)
+  .post('/:id/annuler', invalidateCacheMiddleware(invalidationPatterns.rapports.onVenteCreated), venteController.annuler);
 
-module.exports=  router;
+module.exports = router;

@@ -3,6 +3,7 @@ const cors = require('cors');
 const { sequelize } = require('./src/models');
 require('./src/models/associations');
 const { metricsMiddleware, metricsRouter } = require('./src/api/metrics');
+const redisService = require('./src/api/cache/redisService');
 
 const app = express();
 
@@ -32,6 +33,15 @@ app.use('/api/v1', api);
 
 async function startServer() {
   try {
+    // Initialiser Redis
+    console.log('🔌 Connexion à Redis...');
+    const redisConnected = await redisService.connect();
+    if (redisConnected) {
+      console.log('✅ Redis connecté - Cache activé');
+    } else {
+      console.log('⚠️  Redis non connecté - Fonctionnement sans cache');
+    }
+
     await sequelize.sync({ alter: true });
     console.log('✅ Base de données synchronisée');
     const PORT = process.env.PORT || 3000;
@@ -46,5 +56,20 @@ async function startServer() {
 if (require.main === module) {
   startServer();
 }
+
+// Gestion propre de l'arrêt du serveur
+process.on('SIGINT', async () => {
+  console.log('🛑 Arrêt du serveur...');
+  await redisService.disconnect();
+  console.log('✅ Redis déconnecté');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🛑 Arrêt du serveur...');
+  await redisService.disconnect();
+  console.log('✅ Redis déconnecté');
+  process.exit(0);
+});
 
 module.exports = app;

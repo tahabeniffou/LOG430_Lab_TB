@@ -167,16 +167,18 @@
 
 const Router = require('express');
 const produitController = require('../controllers/produitController.js');
+const { cacheMiddleware, invalidateCacheMiddleware } = require('../../cache/cacheMiddleware');
+const { cacheConfig, invalidationPatterns } = require('../../cache/cacheConfig');
 const router = Router();
 
 router
-  .get('/', produitController.lister)
-  .get('/stock', produitController.stock)
+  .get('/', cacheMiddleware(cacheConfig.produits.list), produitController.lister)
+  .get('/stock', cacheMiddleware(cacheConfig.produits.stock), produitController.stock)
   .get('/erreur500', produitController.erreur500)
-  .get('/:id', produitController.recuperer)
-  .post('/', produitController.creer)
-  .put('/:id', produitController.mettreAJour)
-  .delete('/:id', produitController.supprimer);
+  .get('/:id', cacheMiddleware(cacheConfig.produits.detail), produitController.recuperer)
+  .post('/', invalidateCacheMiddleware(invalidationPatterns.produits.create), produitController.creer)
+  .put('/:id', invalidateCacheMiddleware(invalidationPatterns.produits.update), produitController.mettreAJour)
+  .delete('/:id', invalidateCacheMiddleware(invalidationPatterns.produits.delete), produitController.supprimer);
 
 module.exports = router;
 

@@ -123,13 +123,15 @@
 
 const Router = require('express');
 const rapportController = require('../controllers/rapportController.js');
+const { cacheMiddleware } = require('../../cache/cacheMiddleware');
+const { cacheConfig } = require('../../cache/cacheConfig');
 
 const router = Router();
 
-// GET /api/v1/rapports?type=ventes
-router.get('/', rapportController.generer);
+// GET /api/v1/rapports?type=ventes - avec cache
+router.get('/', cacheMiddleware(cacheConfig.rapports.sales), rapportController.generer);
 
-// (optionnel) GET par ID de rapport
-router.get('/:id', rapportController.recuperer);
+// (optionnel) GET par ID de rapport - avec cache
+router.get('/:id', cacheMiddleware(cacheConfig.rapports.detail), rapportController.recuperer);
 
-module.exports=  router;
+module.exports = router;
