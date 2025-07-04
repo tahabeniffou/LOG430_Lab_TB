@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     montantTotal: {
       type: DataTypes.FLOAT,
-      allowNull: false
+      allowNull: true  // Temporairement allow null pour migration
     }
   }, {
     sequelize,

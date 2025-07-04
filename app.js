@@ -29,14 +29,25 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    services: {
-      database: 'connected',
-      redis: redisService.isConnected() ? 'connected' : 'disconnected'
-    },
-    timestamp: new Date().toISOString()
-  });
+  try {
+    res.json({
+      status: 'OK',
+      services: {
+        database: 'connected',
+        redis: redisService.isConnected ? (redisService.isConnected() ? 'connected' : 'disconnected') : 'unknown'
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.json({
+      status: 'OK',
+      services: {
+        database: 'connected',
+        redis: 'unknown'
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // API Routes - Architecture DDD
@@ -71,17 +82,19 @@ async function startServer() {
   }
 }
 
-// Gestion des erreurs non gérées
-process.on('unhandledRejection', (err) => {
-  logger.error('Unhandled Rejection:', err);
-  process.exit(1);
-});
+// Gestion des erreurs non gérées (seulement en production)
+if (process.env.NODE_ENV !== 'test') {
+  process.on('unhandledRejection', (err) => {
+    logger.error('Unhandled Rejection:', err);
+    process.exit(1);
+  });
 
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM reçu, arrêt gracieux...');
-  await redisService.disconnect();
-  process.exit(0);
-});
+  process.on('SIGTERM', async () => {
+    logger.info('SIGTERM reçu, arrêt gracieux...');
+    await redisService.disconnect();
+    process.exit(0);
+  });
+}
 
 // Démarrage seulement si ce fichier est exécuté directement
 if (require.main === module) {

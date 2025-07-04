@@ -10,7 +10,15 @@ const db = {};
 
 let sequelize;
 if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+  // Configuration pour PostgreSQL en mode production avec DATABASE_URL
+  const databaseUrl = process.env[config.use_env_variable];
+  sequelize = new Sequelize(databaseUrl, {
+    ...config,
+    dialectOptions: {
+      ssl: false // Désactiver SSL pour notre conteneur PostgreSQL local
+    },
+    logging: false // Désactiver les logs SQL en production
+  });
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }

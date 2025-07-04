@@ -113,8 +113,8 @@ class ApiController {
       // Rapport simple des ventes par magasin
       const ventesParMagasin = await Vente.findAll({
         include: [
-          { model: Magasin, attributes: ['nom'] },
-          { model: Utilisateur, attributes: ['nom', 'prenom'] }
+          { model: Magasin, as: 'magasin', attributes: ['nom'] },
+          { model: Utilisateur, as: 'utilisateur', attributes: ['nom'] }
         ],
         order: [['createdAt', 'DESC']]
       });

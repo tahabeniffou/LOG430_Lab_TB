@@ -19,10 +19,10 @@ async function seed() {
 
     // Création des utilisateurs (rôles et mots de passe variés)
     const usersData = [
-      { nom: 'Dupont', prenom: 'Jean', courriel: 'jean.dupont@example.com', role: 'caissier', motDePasse: '1234' },
-      { nom: 'Martin', prenom: 'Sophie', courriel: 'sophie.martin@example.com', role: 'gerant', motDePasse: 'abcd' },
-      { nom: 'Durand', prenom: 'Paul', courriel: 'paul.durand@example.com', role: 'caissier', motDePasse: 'pass1' },
-      { nom: 'Lefevre', prenom: 'Claire', courriel: 'claire.lefevre@example.com', role: 'gerant', motDePasse: 'pass2' }
+      { nom: 'Dupont', prenom: 'Jean', courriel: 'jean.dupont@example.com', nomUtilisateur: 'jdupont', role: 'caissier', motDePasse: '1234' },
+      { nom: 'Martin', prenom: 'Sophie', courriel: 'sophie.martin@example.com', nomUtilisateur: 'smartin', role: 'gerant', motDePasse: 'abcd' },
+      { nom: 'Durand', prenom: 'Paul', courriel: 'paul.durand@example.com', nomUtilisateur: 'pdurand', role: 'caissier', motDePasse: 'pass1' },
+      { nom: 'Lefevre', prenom: 'Claire', courriel: 'claire.lefevre@example.com', nomUtilisateur: 'clefevre', role: 'gerant', motDePasse: 'pass2' }
     ];
     let allUsers = [];
     for (const magasin of magasins) {
@@ -61,7 +61,7 @@ async function seed() {
           total += prod.prix * quantite;
           return { produitId: prod.id, quantite, sousTotal: prod.prix * quantite, magasinId: magasin.id };
         });
-        const vente = await Vente.create({ total, date: new Date(), magasinId: magasin.id });
+        const vente = await Vente.create({ montantTotal: total, date: new Date(), magasinId: magasin.id });
         for (const ligne of lignes) {
           await LigneVente.create({ ...ligne, venteId: vente.id });
         }

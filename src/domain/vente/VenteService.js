@@ -14,8 +14,8 @@ class VenteService {
     if (!magasinId) throw new Error('Magasin requis');
     if (!lignes || lignes.length === 0) throw new Error('Au moins une ligne requise');
 
-    // Créer la vente
-    const vente = new Vente(null, magasinId, utilisateurId, 0);
+    // Créer la vente avec un tableau vide de lignes
+    const vente = new Vente(null, magasinId, utilisateurId, []);
 
     // Valider et ajouter chaque ligne
     for (const ligne of lignes) {
@@ -27,8 +27,9 @@ class VenteService {
       if (produit.stock < ligne.quantite) {
         throw new Error(`Stock insuffisant pour ${produit.nom}`);
       }
-
-      vente.ajouterLigne(ligne.produitId, ligne.quantite, produit.prix);
+      
+      // Passer l'objet produit complet à ajouterLigne
+      vente.ajouterLigne(produit, ligne.quantite);
       
       // Décrémenter le stock
       await this.produitRepository.decrementerStock(ligne.produitId, ligne.quantite);

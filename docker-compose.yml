@@ -46,14 +46,22 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      DATABASE_URL: postgres://posuser:pospass@db:5432/posdb
       DB_HOST: db
       DB_NAME: posdb
       DB_USER: posuser
       DB_PASS: pospass
       REDIS_URL: redis://redis:6379
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - custom_network
 
@@ -66,14 +74,22 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      DATABASE_URL: postgres://posuser:pospass@db:5432/posdb
       DB_HOST: db
       DB_NAME: posdb
       DB_USER: posuser
       DB_PASS: pospass
       REDIS_URL: redis://redis:6379
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - custom_network
 
@@ -86,14 +102,22 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      DATABASE_URL: postgres://posuser:pospass@db:5432/posdb
       DB_HOST: db
       DB_NAME: posdb
       DB_USER: posuser
       DB_PASS: pospass
       REDIS_URL: redis://redis:6379
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - custom_network
 
@@ -106,14 +130,22 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3000"
+      DATABASE_URL: postgres://posuser:pospass@db:5432/posdb
       DB_HOST: db
       DB_NAME: posdb
       DB_USER: posuser
       DB_PASS: pospass
       REDIS_URL: redis://redis:6379
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - custom_network
 
@@ -123,13 +155,13 @@ services:
       dockerfile: Dockerfile
     image: log430_lab_tb_pos_console
     container_name: pos-console
-    entrypoint: ["sh", "./scripts/wait-for-it.sh", "api1:3000", "--", "node", "src/interfaces/console/PosConsole.js"]
+    entrypoint: ["sh", "./scripts/wait-for-it.sh", "loadbalancer:8000", "--", "node", "src/interfaces/console/PosConsoleHttp.js"]
     environment:
-      API_URL: http://loadbalancer:80/api/v1
+      API_URL: http://loadbalancer:8000/api/v1
     stdin_open: true
     tty: true
     depends_on:
-      - api1
+      - loadbalancer
     networks:
       - custom_network
 
@@ -139,13 +171,13 @@ services:
       dockerfile: Dockerfile
     image: log430_lab_tb_maison_mere_console
     container_name: maison-mere-console
-    entrypoint: ["sh", "./scripts/wait-for-it.sh", "api1:3000", "--", "node", "src/interfaces/console/MaisonMereConsole.js"]
+    entrypoint: ["sh", "./scripts/wait-for-it.sh", "loadbalancer:8000", "--", "node", "src/interfaces/console/MaisonMereConsoleHttp.js"]
     environment:
-      API_URL: http://loadbalancer:80/api/v1
+      API_URL: http://loadbalancer:8000/api/v1
     stdin_open: true
     tty: true
     depends_on:
-      - api1
+      - loadbalancer
     networks:
       - custom_network
 
@@ -184,12 +216,14 @@ services:
     volumes:
       - ./config/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - api1
-      - api2
-      - api3
-      - api4
-      - prometheus
-      - grafana
+      api1:
+        condition: service_healthy
+      api2:
+        condition: service_healthy
+      api3:
+        condition: service_healthy
+      api4:
+        condition: service_healthy
     networks:
       - custom_network
 

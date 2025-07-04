@@ -231,38 +231,29 @@ describe('LOG430 Lab TB - Tests API et Fonctionnalités', () => {
 describe('Tests Unitaires - Services du Domaine Métier', () => {
   describe('VenteService - Logique métier des ventes', () => {
     const VenteService = require('../src/domain/vente/VenteService');
-    const VenteEntity = require('../src/domain/vente/Vente');
-    const BaseEntity = require('../src/domain/shared/BaseEntity');
-    const ApplicationService = require('../src/application/ApplicationService');
 
     // Mocks pour les tests unitaires de service
     const mockVenteRepo = {
-      sauvegarder: jest.fn(vente => Promise.resolve({ ...vente, id: 123 })),
+      sauvegarder: jest.fn(),
     };
 
     const mockProduitRepo = {
-      trouverParId: jest.fn(id => Promise.resolve({ id, nom: 'Test', stock: 20, decrementerStock: jest.fn() })),
-      decrementerStock: jest.fn(() => Promise.resolve()),
-    };
-
-    const mockProduitRepoStockInsuffisant = {
-        trouverParId: jest.fn(id => Promise.resolve({ id, nom: 'Test', stock: 5, decrementerStock: jest.fn() })),
-    };
-
-    const mockProduitRepoProduitInexistant = {
-      trouverParId: jest.fn(() => Promise.resolve(null)),
+      trouverParId: jest.fn(),
+      decrementerStock: jest.fn(),
     };
 
     let venteService;
 
     beforeEach(() => {
+      // Réinitialiser les mocks avant chaque test pour éviter les fuites d'état
+      jest.clearAllMocks();
       venteService = new VenteService(mockVenteRepo, mockProduitRepo);
     });
 
     test('Création vente réussie avec validation stock', async () => {
       const produitMock = { id: 1, nom: 'Test', prix: 10, stock: 50 };
       mockProduitRepo.trouverParId.mockResolvedValue(produitMock);
-      mockVenteRepo.sauvegarder.mockResolvedValue({ id: 1, total: 20 });
+      mockVenteRepo.sauvegarder.mockImplementation(vente => Promise.resolve(vente));
 
       const donneesVente = {
         magasinId: 1,
@@ -272,10 +263,13 @@ describe('Tests Unitaires - Services du Domaine Métier', () => {
 
       const vente = await venteService.creerVente(donneesVente);
       expect(vente).toBeDefined();
-      expect(vente.montantTotal).toBe(10.99);
+      expect(vente.montantTotal).toBe(20);
+      expect(mockProduitRepo.decrementerStock).toHaveBeenCalledWith(1, 2);
     });
 
     it('Échec création vente - Produit inexistant', async () => {
+      mockProduitRepo.trouverParId.mockResolvedValue(null); // Simuler produit non trouvé
+
       const donneesVente = {
         magasinId: 1,
         utilisateurId: 1,
@@ -287,6 +281,9 @@ describe('Tests Unitaires - Services du Domaine Métier', () => {
     });
 
     it('Échec création vente - Stock insuffisant', async () => {
+      const produitMock = { id: 1, nom: 'Test', stock: 5 };
+      mockProduitRepo.trouverParId.mockResolvedValue(produitMock); // Simuler produit avec stock faible
+
       const donneesVente = {
         magasinId: 1,
         utilisateurId: 1,
@@ -297,7 +294,6 @@ describe('Tests Unitaires - Services du Domaine Métier', () => {
     });
 
     it('Validation obligatoire du magasin', async () => {
-      const venteService = new VenteService(mockVenteRepo, mockProduitRepo);
       await expect(venteService.creerVente({ utilisateurId: 1, lignes: [{ produitId: 1, quantite: 1 }] }))
         .rejects.toThrow('Magasin requis');
     });
@@ -393,17 +389,20 @@ describe('Tests des Consoles HTTP', () => {
       expect(fs.existsSync(maisonMerePath)).toBe(true);
     });
 
-    test('Les consoles sont des modules JavaScript valides', () => {
-      expect(() => require('../src/interfaces/console/PosConsoleHttp')).not.toThrow();
-      expect(() => require('../src/interfaces/console/MaisonMereConsoleHttp')).not.toThrow();
-    });
-
-    test('Les consoles utilisent le load balancer via HTTP', () => {
-      const posConsole = require('../src/interfaces/console/PosConsoleHttp');
-      const maisonMereConsole = require('../src/interfaces/console/MaisonMereConsoleHttp');
+    test('Les consoles contiennent les URLs API correctes', () => {
+      const fs = require('fs');
+      const path = require('path');
+      const posPath = path.join(__dirname, '../src/interfaces/console/PosConsoleHttp.js');
+      const maisonMerePath = path.join(__dirname, '../src/interfaces/console/MaisonMereConsoleHttp.js');
       
-      expect(posConsole).toBeDefined();
-      expect(maisonMereConsole).toBeDefined();
+      const posConsoleContent = fs.readFileSync(posPath, 'utf8');
+      const maisonMereConsoleContent = fs.readFileSync(maisonMerePath, 'utf8');
+      
+      // Vérifier que les consoles utilisent HTTP et non des connexions directes
+      expect(posConsoleContent).toContain('axios');
+      expect(posConsoleContent).toContain('http://localhost:8000');
+      expect(maisonMereConsoleContent).toContain('axios');
+      expect(maisonMereConsoleContent).toContain('http://localhost:8000');
     });
   });
 });

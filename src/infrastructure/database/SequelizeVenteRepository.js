@@ -13,8 +13,19 @@ class SequelizeVenteRepository extends VenteRepository {
 
   mapToEntity(vente) {
     if (!vente) return null;
-    const venteEntity = new Vente(vente.id, vente.magasinId, vente.utilisateurId, vente.lignes.map(l => ({ produitId: l.produitId, quantite: l.quantite, prix: l.prixTotal })), vente.statut, vente.montantTotal);
-    return { ...venteEntity, lignes: vente.lignes.map(l => ({ ...l.toJSON(), produit: l.produit.toJSON() })) };
+    const lignes = (vente.lignesDeVente || []).map(l => ({
+      produitId: l.produitId,
+      quantite: l.quantite,
+      prixUnitaire: l.prixUnitaire, // Assurez-vous que ce champ existe sur le modèle LigneVente
+      prixTotal: l.prixTotal
+    }));
+
+    const montantRecalcule = lignes.reduce((sum, ligne) => sum + (ligne.prixTotal || 0), 0);
+
+    const venteEntity = new Vente(vente.id, vente.magasinId, vente.utilisateurId, lignes, vente.statut, montantRecalcule);
+    
+    // Retourne un Plain Old Javascript Object (POJO) pour éviter les soucis de sérialisation
+    return JSON.parse(JSON.stringify(venteEntity));
   }
 
   async sauvegarder(vente) {

@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
     nomUtilisateur: {
       type: DataTypes.STRING,
       unique: true,
-      allowNull: false
+      allowNull: true  // Temporairement allow null pour migration
     },
     motDePasse: {
       type: DataTypes.STRING,
