@@ -16,13 +16,17 @@ class SequelizeVenteRepository extends VenteRepository {
     const lignes = (vente.lignesDeVente || []).map(l => ({
       produitId: l.produitId,
       quantite: l.quantite,
-      prixUnitaire: l.prixUnitaire, // Assurez-vous que ce champ existe sur le modèle LigneVente
-      prixTotal: l.prixTotal
+      prixUnitaire: l.prixUnitaire,
+      sousTotal: l.sousTotal,
+      prixTotal: l.sousTotal // pour compatibilité avec l'entité de domaine
     }));
 
-    const montantRecalcule = lignes.reduce((sum, ligne) => sum + (ligne.prixTotal || 0), 0);
+    // Utiliser sousTotal pour le montant total
+    const montantRecalcule = lignes.reduce((sum, ligne) => sum + (ligne.sousTotal || 0), 0);
+    // Prendre montantTotal du modèle si présent, sinon recalculé
+    const montantTotal = vente.montantTotal != null ? vente.montantTotal : montantRecalcule;
 
-    const venteEntity = new Vente(vente.id, vente.magasinId, vente.utilisateurId, lignes, vente.statut, montantRecalcule);
+    const venteEntity = new Vente(vente.id, vente.magasinId, vente.utilisateurId, lignes, vente.statut, montantTotal);
     
     // Retourne un Plain Old Javascript Object (POJO) pour éviter les soucis de sérialisation
     return JSON.parse(JSON.stringify(venteEntity));
@@ -34,16 +38,36 @@ class SequelizeVenteRepository extends VenteRepository {
       const nouvelleVente = await this.Vente.create({ ...vente, montantTotal: vente.montantTotal }, { transaction });
 
       const lignesDeVente = vente.lignes.map(ligne => ({
-        ...ligne,
+        quantite: ligne.quantite,
+        prixUnitaire: ligne.prixUnitaire,
+        sousTotal: ligne.prixUnitaire * ligne.quantite,
         venteId: nouvelleVente.id,
-        prixTotal: ligne.prixUnitaire * ligne.quantite
+        produitId: ligne.produitId,
+        magasinId: nouvelleVente.magasinId
       }));
 
       await this.LigneVente.bulkCreate(lignesDeVente, { transaction });
 
+      // Relire la vente et ses lignes pour calcul correct du montantTotal
+      const venteAvecLignes = await this.Vente.findByPk(nouvelleVente.id, {
+        include: [{ model: this.LigneVente, as: 'lignesDeVente' }],
+        transaction
+      });
+      // Calculer le montant total à partir des sousTotal
+      const montantTotal = venteAvecLignes.lignesDeVente.reduce((sum, l) => sum + (l.sousTotal || 0), 0);
+      venteAvecLignes.montantTotal = montantTotal;
+      await venteAvecLignes.save({ transaction });
+
+      // Relire la vente pour garantir que montantTotal est bien à jour
+      const venteFinale = await this.Vente.findByPk(nouvelleVente.id, {
+        include: [{ model: this.LigneVente, as: 'lignesDeVente' }],
+        transaction
+      });
+
       await transaction.commit();
 
-      return new Vente(nouvelleVente.id, nouvelleVente.magasinId, nouvelleVente.utilisateurId, lignesDeVente, nouvelleVente.statut, nouvelleVente.montantTotal);
+      // Retourner l'entité de domaine correctement mappée
+      return this.mapToEntity(venteFinale);
     } catch (error) {
       await transaction.rollback();
       throw error;

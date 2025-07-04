@@ -31,6 +31,8 @@ describe('LOG430 Lab TB - Tests API et Fonctionnalités', () => {
     await Utilisateur.create({
       id: 1,
       nom: 'Admin',
+      prenom: 'Admin',
+      courriel: 'admin@test.com',
       role: 'admin',
       nomUtilisateur: 'admin.test',
       magasinId: 1,

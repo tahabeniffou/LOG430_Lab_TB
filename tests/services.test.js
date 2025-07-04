@@ -27,7 +27,7 @@ describe('Tests Complets - Services, Repositories et Entités', () => {
     await db.Magasin.create({ id: 1, nom: 'Magasin Test', adresse: '123 rue test' });
     await db.Produit.create({ id: 1, nom: 'Produit A', prix: 10, quantiteStock: 100, categorie: 'catA', magasinId: 1 });
     await db.Produit.create({ id: 2, nom: 'Produit B', prix: 20, quantiteStock: 50, categorie: 'catB', magasinId: 1 });
-    await db.Utilisateur.create({ id: 1, nom: 'Doe', prenom: 'John', nomUtilisateur: 'admin', role: 'admin', magasinId: 1, motDePasse: 'password123' });
+    await db.Utilisateur.create({ id: 1, nom: 'Doe', prenom: 'John', nomUtilisateur: 'admin', role: 'admin', magasinId: 1, motDePasse: 'password123', courriel: 'admin@test.com' });
   });
 
   afterAll(async () => {

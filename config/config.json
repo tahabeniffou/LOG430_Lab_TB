@@ -18,5 +18,9 @@
         "rejectUnauthorized": false
       }
     }
+  },
+  "cache": {
+    "enabled": false,
+    "type": "none"
   }
 }
