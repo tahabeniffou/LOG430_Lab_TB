@@ -12,11 +12,20 @@ module.exports = (sequelize, DataTypes) => {
   Vente.init({
     dateVente: {
       type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
+      defaultValue: DataTypes.NOW,
+      allowNull: false
     },
     montantTotal: {
       type: DataTypes.FLOAT,
-      allowNull: true  // Temporairement allow null pour migration
+      allowNull: false
+    },
+    magasinId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    utilisateurId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     }
   }, {
     sequelize,

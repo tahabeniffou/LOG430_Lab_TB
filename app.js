@@ -67,8 +67,14 @@ async function startServer() {
     }
 
     // Synchronisation DB
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ force: true });
     logger.info('Base de données synchronisée');
+
+    // Exécution du script de seed
+    logger.info('Initialisation des données...');
+    const seedFunction = require('./src/models/seed.js');
+    await seedFunction();
+    logger.info('Données initiales créées');
 
     // Démarrage serveur
     const PORT = process.env.PORT || 3000;

@@ -4,10 +4,7 @@ require('./associations');
 
 async function seed() {
   try {
-    await sequelize.authenticate();
     console.log('Connexion à la base de données réussie.');
-    await sequelize.sync({ force: true });
-    console.log('Synchronisation des modèles terminée.');
 
     // Création des magasins
     const magasins = await Magasin.bulkCreate([
@@ -19,30 +16,41 @@ async function seed() {
 
     // Création des utilisateurs (rôles et mots de passe variés)
     const usersData = [
-      { nom: 'Dupont', prenom: 'Jean', courriel: 'jean.dupont@example.com', nomUtilisateur: 'jdupont', role: 'caissier', motDePasse: '1234' },
-      { nom: 'Martin', prenom: 'Sophie', courriel: 'sophie.martin@example.com', nomUtilisateur: 'smartin', role: 'gerant', motDePasse: 'abcd' },
-      { nom: 'Durand', prenom: 'Paul', courriel: 'paul.durand@example.com', nomUtilisateur: 'pdurand', role: 'caissier', motDePasse: 'pass1' },
-      { nom: 'Lefevre', prenom: 'Claire', courriel: 'claire.lefevre@example.com', nomUtilisateur: 'clefevre', role: 'gerant', motDePasse: 'pass2' }
+      { nom: 'Dupont', prenom: 'Jean', role: 'caissier', motDePasse: '1234' },
+      { nom: 'Martin', prenom: 'Sophie', role: 'gerant', motDePasse: 'abcd' },
+      { nom: 'Durand', prenom: 'Paul', role: 'caissier', motDePasse: 'pass1' },
+      { nom: 'Lefevre', prenom: 'Claire', role: 'gerant', motDePasse: 'pass2' }
     ];
     let allUsers = [];
-    for (const magasin of magasins) {
-      const users = await Utilisateur.bulkCreate(usersData.map(u => ({ ...u, magasinId: magasin.id })), { returning: true });
+    for (let i = 0; i < magasins.length; i++) {
+      const magasin = magasins[i];
+      const users = await Utilisateur.bulkCreate(usersData.map((u, j) => ({ 
+        ...u, 
+        courriel: `${u.prenom.toLowerCase()}.${u.nom.toLowerCase()}.m${i+1}@example.com`,
+        nomUtilisateur: `${u.prenom.toLowerCase()}_${u.nom.toLowerCase()}_m${i+1}`,
+        magasinId: magasin.id 
+      })), { returning: true });
       allUsers = allUsers.concat(users);
       console.log(`Utilisateurs créés pour le magasin ${magasin.nom} :`, users.map(u => u.toJSON()));
     }
 
     // Création de produits variés pour chaque magasin
     const produitsData = [
-      { nom: 'Pain', prix: 2.5, stock: 100 },
-      { nom: 'Lait', prix: 1.5, stock: 80 },
-      { nom: 'Fromage', prix: 4.0, stock: 50 },
-      { nom: 'Jus', prix: 3.0, stock: 60 },
-      { nom: 'Biscuit', prix: 2.0, stock: 120 },
-      { nom: 'Café', prix: 5.0, stock: 40 }
+      { nom: 'Pain', prix: 2.5, quantiteStock: 100, description: 'Pain frais artisanal' },
+      { nom: 'Lait', prix: 1.5, quantiteStock: 80, description: 'Lait entier 1L' },
+      { nom: 'Fromage', prix: 4.0, quantiteStock: 50, description: 'Fromage de chèvre' },
+      { nom: 'Jus', prix: 3.0, quantiteStock: 60, description: 'Jus d\'orange 100% pur' },
+      { nom: 'Biscuit', prix: 2.0, quantiteStock: 120, description: 'Biscuits au chocolat' },
+      { nom: 'Café', prix: 5.0, quantiteStock: 40, description: 'Café en grains premium' }
     ];
     let allProduits = [];
-    for (const magasin of magasins) {
-      const produits = await Produit.bulkCreate(produitsData.map(p => ({ ...p, magasinId: magasin.id })), { returning: true });
+    for (let i = 0; i < magasins.length; i++) {
+      const magasin = magasins[i];
+      const produits = await Produit.bulkCreate(produitsData.map(p => ({ 
+        ...p, 
+        nom: `${p.nom} - ${magasin.nom}`,
+        magasinId: magasin.id 
+      })), { returning: true });
       allProduits = allProduits.concat(produits);
       console.log(`Produits créés pour le magasin ${magasin.nom} :`, produits.map(p => p.toJSON()));
     }
@@ -58,10 +66,23 @@ async function seed() {
         let total = 0;
         const lignes = produitsVente.map(prod => {
           const quantite = Math.floor(Math.random() * 5) + 1;
-          total += prod.prix * quantite;
-          return { produitId: prod.id, quantite, sousTotal: prod.prix * quantite, magasinId: magasin.id };
+          const prixUnitaire = prod.prix;
+          const sousTotal = prixUnitaire * quantite;
+          total += sousTotal;
+          return { 
+            produitId: prod.id, 
+            quantite, 
+            prixUnitaire,
+            sousTotal, 
+            magasinId: magasin.id 
+          };
         });
-        const vente = await Vente.create({ montantTotal: total, date: new Date(), magasinId: magasin.id });
+        const vente = await Vente.create({ 
+          montantTotal: total, 
+          dateVente: new Date(), 
+          magasinId: magasin.id,
+          utilisateurId: vendeur.id
+        });
         for (const ligne of lignes) {
           await LigneVente.create({ ...ligne, venteId: vente.id });
         }
@@ -70,11 +91,15 @@ async function seed() {
     }
 
     console.log('Seed COMPLET terminé : magasins, utilisateurs, produits, ventes et lignes de vente créés.');
-    process.exit(0);
   } catch (e) {
     console.error('Erreur dans le script de seed :', e);
-    process.exit(1);
+    throw e;
   }
 }
 
-seed();
+module.exports = seed;
+
+// Démarrage seulement si ce fichier est exécuté directement
+if (require.main === module) {
+  seed().then(() => process.exit(0));
+}

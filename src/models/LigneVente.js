@@ -5,12 +5,35 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       LigneVente.belongsTo(models.Vente, { foreignKey: 'venteId', as: 'vente' });
       LigneVente.belongsTo(models.Produit, { foreignKey: 'produitId', as: 'produit' });
+      LigneVente.belongsTo(models.Magasin, { foreignKey: 'magasinId', as: 'magasin' });
     }
   }
 
   LigneVente.init({
-    quantite: DataTypes.INTEGER,
-    prixUnitaire: DataTypes.FLOAT
+    quantite: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    prixUnitaire: {
+      type: DataTypes.FLOAT,
+      allowNull: false
+    },
+    sousTotal: {
+      type: DataTypes.FLOAT,
+      allowNull: false
+    },
+    venteId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    produitId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    magasinId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
   }, {
     sequelize,
     modelName: 'LigneVente',

@@ -14,15 +14,37 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Utilisateur.init({
-    nom: DataTypes.STRING,
-    role: DataTypes.STRING, // ex: 'vendeur', 'admin'
+    nom: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    prenom: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    courriel: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true
+      }
+    },
+    role: {
+      type: DataTypes.STRING,
+      allowNull: false
+    }, // ex: 'vendeur', 'admin'
     nomUtilisateur: {
       type: DataTypes.STRING,
       unique: true,
-      allowNull: true  // Temporairement allow null pour migration
+      allowNull: false
     },
     motDePasse: {
       type: DataTypes.STRING,
+      allowNull: false
+    },
+    magasinId: {
+      type: DataTypes.INTEGER,
       allowNull: false
     }
   }, {
