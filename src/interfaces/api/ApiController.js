@@ -1,9 +1,10 @@
 // Contrôleur unifié pour l'API - Architecture DDD
 const ApplicationService = require('../../application/ApplicationService');
+const db = require('../../models');
 
 class ApiController {
   constructor() {
-    this.applicationService = new ApplicationService();
+    this.applicationService = new ApplicationService(db);
   }
 
   // Produits
@@ -24,6 +25,18 @@ class ApiController {
         return res.status(404).json({ message: 'Produit non trouvé' });
       }
       res.json(produit);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async obtenirVente(req, res, next) {
+    try {
+      const vente = await this.applicationService.consulterVente(req.params.id);
+      if (!vente) {
+        return res.status(404).json({ message: 'Vente non trouvée' });
+      }
+      res.json(vente);
     } catch (error) {
       next(error);
     }
@@ -108,11 +121,20 @@ class ApiController {
 
       const resume = {
         totalVentes: ventesParMagasin.length,
-        chiffreAffaireTotal: ventesParMagasin.reduce((sum, v) => sum + parseFloat(v.total), 0),
+        chiffreAffaireTotal: ventesParMagasin.reduce((sum, v) => sum + (parseFloat(v.montantTotal) || 0), 0),
         ventes: ventesParMagasin
       };
 
       res.json(resume);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Health Check
+  async healthCheck(req, res, next) {
+    try {
+      res.json({ status: 'OK', date: new Date() });
     } catch (error) {
       next(error);
     }

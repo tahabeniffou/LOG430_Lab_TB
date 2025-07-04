@@ -19,14 +19,6 @@ class ProduitRepository {
   async rechercherParNom(nom) {
     throw new Error('Method not implemented');
   }
-
-  async decrementerStock(id, quantite) {
-    throw new Error('Method not implemented');
-  }
-
-  async incrementerStock(id, quantite) {
-    throw new Error('Method not implemented');
-  }
 }
 
 module.exports = ProduitRepository;

@@ -1,93 +1,62 @@
 // Implémentation Sequelize du repository Vente
 const VenteRepository = require('../../domain/vente/VenteRepository');
 const Vente = require('../../domain/vente/Vente');
-const VenteModel = require('../../models/Vente');
-const LigneVenteModel = require('../../models/LigneVente');
+const LigneVente = require('../../domain/vente/LigneVente');
 
 class SequelizeVenteRepository extends VenteRepository {
+  constructor(db) {
+    super();
+    this.Vente = db.Vente;
+    this.LigneVente = db.LigneVente;
+    this.sequelize = db.sequelize;
+  }
+
+  mapToEntity(vente) {
+    if (!vente) return null;
+    const venteEntity = new Vente(vente.id, vente.magasinId, vente.utilisateurId, vente.lignes.map(l => ({ produitId: l.produitId, quantite: l.quantite, prix: l.prixTotal })), vente.statut, vente.montantTotal);
+    return { ...venteEntity, lignes: vente.lignes.map(l => ({ ...l.toJSON(), produit: l.produit.toJSON() })) };
+  }
+
   async sauvegarder(vente) {
-    const venteData = {
-      magasinId: vente.magasinId,
-      utilisateurId: vente.utilisateurId,
-      total: vente.total,
-      date: vente.date,
-      statut: vente.statut
-    };
+    const transaction = await this.sequelize.transaction();
+    try {
+      const nouvelleVente = await this.Vente.create({ ...vente, montantTotal: vente.montantTotal }, { transaction });
 
-    let venteModel;
-    if (vente.id) {
-      // Mise à jour
-      await VenteModel.update(venteData, { where: { id: vente.id } });
-      venteModel = await VenteModel.findByPk(vente.id);
-    } else {
-      // Création
-      venteModel = await VenteModel.create(venteData);
-      
-      // Créer les lignes de vente
-      for (const ligne of vente.lignes) {
-        await LigneVenteModel.create({
-          venteId: venteModel.id,
-          produitId: ligne.produitId,
-          quantite: ligne.quantite,
-          sousTotal: ligne.sousTotal,
-          magasinId: vente.magasinId
-        });
-      }
+      const lignesDeVente = vente.lignes.map(ligne => ({
+        ...ligne,
+        venteId: nouvelleVente.id,
+        prixTotal: ligne.prixUnitaire * ligne.quantite
+      }));
+
+      await this.LigneVente.bulkCreate(lignesDeVente, { transaction });
+
+      await transaction.commit();
+
+      return new Vente(nouvelleVente.id, nouvelleVente.magasinId, nouvelleVente.utilisateurId, lignesDeVente, nouvelleVente.statut, nouvelleVente.montantTotal);
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
-
-    return this.mapToEntity(venteModel);
   }
 
   async trouverParId(id) {
-    const venteModel = await VenteModel.findByPk(id, {
-      include: [LigneVenteModel]
-    });
-    
+    const venteModel = await this.Vente.findByPk(id, { include: 'lignesDeVente' });
     return venteModel ? this.mapToEntity(venteModel) : null;
   }
 
   async listerParMagasin(magasinId) {
-    const ventesModel = await VenteModel.findAll({
+    const ventesModel = await this.Vente.findAll({ 
       where: { magasinId },
-      include: [LigneVenteModel]
+      include: 'lignesDeVente' 
     });
-    
     return ventesModel.map(v => this.mapToEntity(v));
   }
 
   async listerToutes() {
-    const ventesModel = await VenteModel.findAll({
-      include: [LigneVenteModel]
+    const ventesModel = await this.Vente.findAll({ 
+      include: 'lignesDeVente' 
     });
-    
     return ventesModel.map(v => this.mapToEntity(v));
-  }
-
-  async supprimer(id) {
-    await VenteModel.destroy({ where: { id } });
-  }
-
-  mapToEntity(venteModel) {
-    const vente = new Vente(
-      venteModel.id,
-      venteModel.magasinId,
-      venteModel.utilisateurId,
-      venteModel.total,
-      venteModel.date
-    );
-    
-    vente.statut = venteModel.statut;
-    
-    if (venteModel.LigneVentes) {
-      vente.lignes = venteModel.LigneVentes.map(ligne => ({
-        produitId: ligne.produitId,
-        quantite: ligne.quantite,
-        prix: ligne.sousTotal / ligne.quantite,
-        sousTotal: ligne.sousTotal
-      }));
-    }
-    
-    return vente;
   }
 }
 

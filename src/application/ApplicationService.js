@@ -2,11 +2,13 @@
 const VenteService = require('../domain/vente/VenteService');
 const SequelizeVenteRepository = require('../infrastructure/database/SequelizeVenteRepository');
 const SequelizeProduitRepository = require('../infrastructure/database/SequelizeProduitRepository');
+const SequelizeUtilisateurRepository = require('../infrastructure/database/SequelizeUtilisateurRepository');
 
 class ApplicationService {
-  constructor() {
-    this.venteRepository = new SequelizeVenteRepository();
-    this.produitRepository = new SequelizeProduitRepository();
+  constructor(db) {
+    this.venteRepository = new SequelizeVenteRepository(db);
+    this.produitRepository = new SequelizeProduitRepository(db);
+    this.utilisateurRepository = new SequelizeUtilisateurRepository(db);
     this.venteService = new VenteService(this.venteRepository, this.produitRepository);
   }
 
@@ -48,6 +50,11 @@ class ApplicationService {
   async obtenirStock(produitId) {
     const produit = await this.produitRepository.trouverParId(produitId);
     return produit ? produit.stock : 0;
+  }
+
+  // Use Case: Consulter une vente par son ID
+  async consulterVente(venteId) {
+    return await this.venteRepository.trouverParId(venteId);
   }
 }
 

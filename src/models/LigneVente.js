@@ -1,12 +1,20 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./db');
+const { Model, DataTypes } = require('sequelize');
 
-const LigneVente = sequelize.define('LigneVente', {
-  quantite: DataTypes.INTEGER,
-  sousTotal: DataTypes.FLOAT,
-  venteId: { type: DataTypes.INTEGER, allowNull: false },
-  produitId: { type: DataTypes.INTEGER, allowNull: false },
-  magasinId: { type: DataTypes.INTEGER, allowNull: true }
-});
+module.exports = (sequelize, DataTypes) => {
+  class LigneVente extends Model {
+    static associate(models) {
+      LigneVente.belongsTo(models.Vente, { foreignKey: 'venteId', as: 'vente' });
+      LigneVente.belongsTo(models.Produit, { foreignKey: 'produitId', as: 'produit' });
+    }
+  }
 
-module.exports = LigneVente;
+  LigneVente.init({
+    quantite: DataTypes.INTEGER,
+    prixUnitaire: DataTypes.FLOAT
+  }, {
+    sequelize,
+    modelName: 'LigneVente',
+  });
+
+  return LigneVente;
+};

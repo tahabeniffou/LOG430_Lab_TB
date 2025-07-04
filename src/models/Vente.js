@@ -1,18 +1,27 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./db');
+const { Model, DataTypes } = require('sequelize');
 
-const Vente = sequelize.define('Vente', {
-  total: DataTypes.FLOAT,
-  date: DataTypes.DATE,
-  magasinId: { type: DataTypes.INTEGER, allowNull: false },
-  statut: { 
-    type: DataTypes.STRING, 
-    allowNull: false, 
-    defaultValue: 'active',
-    validate: {
-      isIn: [['active', 'annulee']]
+module.exports = (sequelize, DataTypes) => {
+  class Vente extends Model {
+    static associate(models) {
+      Vente.belongsTo(models.Magasin, { foreignKey: 'magasinId', as: 'magasin' });
+      Vente.belongsTo(models.Utilisateur, { foreignKey: 'utilisateurId', as: 'utilisateur' });
+      Vente.hasMany(models.LigneVente, { as: 'lignesDeVente', foreignKey: 'venteId' });
     }
   }
-});
 
-module.exports = Vente;
+  Vente.init({
+    dateVente: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    montantTotal: {
+      type: DataTypes.FLOAT,
+      allowNull: false
+    }
+  }, {
+    sequelize,
+    modelName: 'Vente',
+  });
+
+  return Vente;
+};

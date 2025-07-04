@@ -1,44 +1,40 @@
+const BaseEntity = require('../shared/BaseEntity');
+
 // Entité Vente - Domaine métier
-class Vente {
-  constructor(id, magasinId, utilisateurId, total, date = new Date()) {
-    this.id = id;
+class Vente extends BaseEntity {
+  constructor(id, magasinId, utilisateurId, lignes, statut = 'en_cours', montantTotal = 0, createdAt, updatedAt) {
+    super(id, createdAt, updatedAt);
+    if (!magasinId || !utilisateurId) {
+      throw new Error('ID du magasin et de l\'utilisateur sont requis');
+    }
     this.magasinId = magasinId;
     this.utilisateurId = utilisateurId;
-    this.total = total;
-    this.date = date;
-    this.statut = 'active';
-    this.lignes = [];
-  }
-
-  ajouterLigne(produitId, quantite, prix) {
-    if (quantite <= 0) {
-      throw new Error('La quantité doit être positive');
+    this.lignes = lignes || []; // Garantir que lignes est toujours un tableau
+    this.statut = statut; // 'en_cours', 'terminee', 'annulee'
+    this.montantTotal = montantTotal;
+    if (this.lignes.length > 0) {
+      this._recalculerTotal();
     }
-    
-    const sousTotal = quantite * prix;
-    this.lignes.push({
-      produitId,
-      quantite,
-      prix,
-      sousTotal
-    });
-    
-    this.recalculerTotal();
   }
 
-  recalculerTotal() {
-    this.total = this.lignes.reduce((sum, ligne) => sum + ligne.sousTotal, 0);
+  ajouterLigne(produit, quantite) {
+    if (quantite <= 0) {
+      throw new Error('La quantité doit être positive.');
+    }
+    // Idéalement, LigneVente serait sa propre classe
+    this.lignes.push({ produitId: produit.id, quantite, prixUnitaire: produit.prix, prixTotal: produit.prix * quantite });
+    this._recalculerTotal();
   }
 
   annuler() {
-    if (this.statut === 'annulee') {
-      throw new Error('Vente déjà annulée');
+    if (this.statut === 'terminee') {
+      throw new Error('Une vente terminée ne peut être annulée.');
     }
     this.statut = 'annulee';
   }
 
-  estActive() {
-    return this.statut === 'active';
+  _recalculerTotal() {
+    this.montantTotal = this.lignes.reduce((sum, ligne) => sum + ligne.prixTotal, 0);
   }
 }
 

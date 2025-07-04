@@ -12,6 +12,7 @@ router.get('/produits/:produitId/stock', (req, res, next) => apiController.obten
 
 // Routes Ventes
 router.get('/ventes', (req, res, next) => apiController.listerVentes(req, res, next));
+router.get('/ventes/:id', (req, res, next) => apiController.obtenirVente(req, res, next)); // Ajout de la route
 router.post('/ventes', (req, res, next) => apiController.creerVente(req, res, next));
 router.post('/ventes/:id/annuler', (req, res, next) => apiController.annulerVente(req, res, next));
 
@@ -23,5 +24,8 @@ router.get('/rapports', (req, res, next) => apiController.genererRapports(req, r
 
 // Routes Utilisateurs (via ApiController)
 router.get('/utilisateurs', (req, res, next) => apiController.listerUtilisateurs(req, res, next));
+
+// Route Health Check
+router.get('/health', (req, res, next) => apiController.healthCheck(req, res, next));
 
 module.exports = router;

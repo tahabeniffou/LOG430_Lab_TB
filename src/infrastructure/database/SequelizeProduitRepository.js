@@ -1,95 +1,77 @@
 // Implémentation Sequelize du repository Produit
+const ProduitEntity = require('../../domain/produit/Produit');
 const ProduitRepository = require('../../domain/produit/ProduitRepository');
-const Produit = require('../../domain/produit/Produit');
-const ProduitModel = require('../../models/Produit');
-const { Op } = require('sequelize');
 
 class SequelizeProduitRepository extends ProduitRepository {
-  async sauvegarder(produit) {
-    const produitData = {
-      nom: produit.nom,
-      prix: produit.prix,
-      stock: produit.stock,
-      categorie: produit.categorie
+  constructor(db) {
+    super();
+    this.db = db;
+    this.ProduitModel = db.Produit;
+  }
+
+  mapToEntity(m) {
+    if (!m) return null;
+    const modelJson = m.toJSON ? m.toJSON() : m;
+    // On mappe quantiteStock du modèle Sequelize vers stock de l'entité
+    // et on retourne un objet simple pour la sérialisation JSON.
+    return {
+      id: modelJson.id,
+      nom: modelJson.nom,
+      prix: modelJson.prix,
+      stock: modelJson.quantiteStock, // mapping clé pour l'API/tests
+      categorie: modelJson.categorie,
+      magasinId: modelJson.magasinId,
+      createdAt: modelJson.createdAt,
+      updatedAt: modelJson.updatedAt
     };
-
-    let produitModel;
-    if (produit.id) {
-      await ProduitModel.update(produitData, { where: { id: produit.id } });
-      produitModel = await ProduitModel.findByPk(produit.id);
-    } else {
-      produitModel = await ProduitModel.create(produitData);
-    }
-
-    return this.mapToEntity(produitModel);
   }
 
   async trouverParId(id) {
-    const produitModel = await ProduitModel.findByPk(id);
+    const produitModel = await this.ProduitModel.findByPk(id);
     return produitModel ? this.mapToEntity(produitModel) : null;
   }
 
   async listerTous() {
-    const produitsModel = await ProduitModel.findAll();
+    const produitsModel = await this.ProduitModel.findAll();
     return produitsModel.map(p => this.mapToEntity(p));
   }
 
-  async listerParCategorie(categorie) {
-    const produitsModel = await ProduitModel.findAll({
-      where: { categorie }
-    });
-    return produitsModel.map(p => this.mapToEntity(p));
-  }
+  async sauvegarder(produit) {
+    const produitData = {
+      nom: produit.nom,
+      description: produit.description,
+      prix: produit.prix,
+      quantiteStock: produit.quantiteStock
+    };
 
-  async rechercherParNom(nom) {
-    const produitsModel = await ProduitModel.findAll({
-      where: {
-        nom: {
-          [Op.iLike]: `%${nom}%`
-        }
-      }
-    });
-    return produitsModel.map(p => this.mapToEntity(p));
+    let produitModel;
+    if (produit.id) {
+      await this.ProduitModel.update(produitData, { where: { id: produit.id } });
+      produitModel = await this.ProduitModel.findByPk(produit.id);
+    } else {
+      produitModel = await this.ProduitModel.create(produitData);
+    }
+    return this.mapToEntity(produitModel);
   }
 
   async decrementerStock(id, quantite) {
-    const produitModel = await ProduitModel.findByPk(id);
+    const produitModel = await this.ProduitModel.findByPk(id);
     if (!produitModel) {
       throw new Error('Produit non trouvé');
     }
-
-    const produit = this.mapToEntity(produitModel);
-    produit.decrementerStock(quantite);
-    
-    await ProduitModel.update(
-      { stock: produit.stock }, 
-      { where: { id } }
-    );
-  }
-
-  async incrementerStock(id, quantite) {
-    const produitModel = await ProduitModel.findByPk(id);
-    if (!produitModel) {
-      throw new Error('Produit non trouvé');
+    if (produitModel.quantiteStock < quantite) {
+      throw new Error('Stock insuffisant');
     }
-
-    const produit = this.mapToEntity(produitModel);
-    produit.incrementerStock(quantite);
-    
-    await ProduitModel.update(
-      { stock: produit.stock }, 
-      { where: { id } }
-    );
+    produitModel.quantiteStock -= quantite;
+    await produitModel.save();
+    return this.mapToEntity(produitModel);
   }
 
-  mapToEntity(produitModel) {
-    return new Produit(
-      produitModel.id,
-      produitModel.nom,
-      produitModel.prix,
-      produitModel.stock,
-      produitModel.categorie
-    );
+  async supprimer(id) {
+    const produitModel = await this.ProduitModel.findByPk(id);
+    if (produitModel) {
+      await produitModel.destroy();
+    }
   }
 }
 

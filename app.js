@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const { sequelize } = require('./src/models');
-require('./src/models/associations');
 const { metricsMiddleware, metricsRouter } = require('./src/api/metrics');
 const redisService = require('./src/api/cache/redisService');
 const logger = require('./src/api/logger');
