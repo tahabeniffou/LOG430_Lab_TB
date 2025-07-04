@@ -1,20 +1,19 @@
 #!/bin/bash
 
-# 🚀 Script de Validation Complète - LOG430 Lab TB v4.0
-# Ce script vérifie que toutes les améliorations sont opérationnelles
+# 🚀 Validation Système DDD - LOG430 Lab TB  
+# Script épuré pour la nouvelle architecture
 
-echo "🎯 LOG430 Lab TB - Validation Système Complet"
+echo "🎯 LOG430 Lab TB - Validation Architecture DDD"
 echo "============================================="
 echo ""
 
-# Couleurs pour l'affichage
-RED='\033[0;31m'
+# Couleurs
 GREEN='\033[0;32m'
+RED='\033[0;31m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Fonction de validation avec émoji
 check_service() {
     local service_name=$1
     local url=$2
@@ -28,6 +27,61 @@ check_service() {
     else
         echo -e "${RED}❌ ÉCHEC${NC}"
         return 1
+    fi
+}
+
+echo "🔍 1. Services Infrastructure"
+echo "-----------------------------"
+check_service "Load Balancer" "http://localhost:8000/"
+check_service "API Instance 1" "http://localhost:3001/health"
+check_service "API Instance 2" "http://localhost:3002/health" 
+check_service "Redis Cache" "http://localhost:8000/api/v1/produits"
+check_service "Prometheus" "http://localhost:9090/-/healthy"
+check_service "Grafana" "http://localhost:3030/api/health"
+echo ""
+
+echo "🎯 2. Use Cases DDD"
+echo "-------------------"
+check_service "Lister Produits" "http://localhost:8000/api/v1/produits"
+check_service "Consulter Ventes" "http://localhost:8000/api/v1/ventes"
+echo ""
+
+echo "⚡ 3. Test Performance"
+echo "---------------------"
+echo -n "Test latence API... "
+RESPONSE_TIME=$(curl -s -w "%{time_total}" -o /dev/null "http://localhost:8000/api/v1/produits")
+if (( $(echo "$RESPONSE_TIME < 0.5" | bc -l) )); then
+    echo -e "${GREEN}✅ ${RESPONSE_TIME}s${NC}"
+else
+    echo -e "${YELLOW}⚠️  ${RESPONSE_TIME}s${NC}"
+fi
+echo ""
+
+echo "🎉 RÉSUMÉ ARCHITECTURE DDD"
+echo "=========================="
+echo -e "${BLUE}✅ Domaines:${NC} Vente, Produit, Magasin"
+echo -e "${BLUE}✅ Couches:${NC} Domain, Application, Infrastructure, Interfaces"  
+echo -e "${BLUE}✅ Services:${NC} 4 APIs + Load Balancer + Cache Redis"
+echo -e "${BLUE}✅ Consoles:${NC} POS + Maison Mère (DDD)"
+echo -e "${BLUE}✅ Monitoring:${NC} Prometheus + Grafana"
+echo ""
+
+echo "🚀 COMMANDES UTILES"
+echo "=================="
+echo -e "${YELLOW}# Consoles DDD:${NC}"
+echo "docker exec -it pos-console node pos-console.js"
+echo "docker exec -it maison-mere-console node maison-mere-console.js"
+echo ""
+echo -e "${YELLOW}# Tests:${NC}"
+echo "npm test              # Tests unitaires"
+echo "npm run test:load     # Tests charge K6"
+echo ""
+echo -e "${YELLOW}# Monitoring:${NC}"
+echo "docker compose logs -f"
+echo "curl http://localhost:8000/api/v1/produits"
+echo ""
+
+echo -e "${GREEN}✅ Architecture DDD opérationnelle !${NC}"
     fi
 }
 

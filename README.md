@@ -1,102 +1,95 @@
-# LOG430 - Système POS Distribué Haute Performance
+# LOG430 - Système POS DDD (Domain Driven Design)
 
-> **Version Laboratoire 4** - Système multi-magasins avec cache distribué, load balancing, et observabilité complète
+> **Architecture épurée** - Système multi-magasins avec DDD, cache distribué, load balancing, et observabilité complète
 
-Ce projet implémente une solution distribuée de point de vente (POS) entreprise avec :
-- **4 instances API** derrière un load balancer NGINX
-- **Cache distribué Redis** pour des performances optimales
-- **Observabilité complète** (Prometheus, Grafana, logs structurés)
-- **Résilience et haute disponibilité**
-- Consoles interactives pour magasins et maison mère
-- Base de données PostgreSQL centralisée
+## 📁 Structure du Projet
 
-Développé dans le cadre du cours **LOG430 – Architecture logicielle distribuée** à l'ÉTS.
-
-## 🚀 Architecture et Performance
-
-### Architecture Distribuée
-- **Load Balancer**: NGINX avec 4 instances API en round-robin
-- **Cache**: Redis distribué avec invalidation intelligente
-- **Base de données**: PostgreSQL avec connexions poolées
-- **Monitoring**: Prometheus + Grafana + Winston logs
-
-### Gains de Performance Mesurés
-- **Latence réduite**: 40-60% sur les endpoints critiques
-- **Débit amélioré**: 1.2x à 2.2x plus de requêtes/seconde
-- **Cache hit ratio**: >80% sur les données fréquemment consultées
-- **Résilience**: Tolérance aux pannes avec 0% de downtime
-
----
-
-## 🛠 Technologies et Stack
-
-| Composant | Technologie | Version |
-|-----------|-------------|---------|
-| **Backend** | Node.js + Express | 18+ |
-| **Base de données** | PostgreSQL + Sequelize | 15+ |
-| **Cache** | Redis | 7+ |
-| **Load Balancer** | NGINX | 1.24+ |
-| **Monitoring** | Prometheus + Grafana | Latest |
-| **Logging** | Winston + Morgan | Latest |
-| **Tests** | Jest + K6 | Latest |
-| **Container** | Docker + Docker Compose | Latest |
-
----
+```
+📦 LOG430_Lab_TB/
+├── 🏗️ src/                    # Code source
+│   ├── domain/               # Logique métier DDD
+│   ├── application/          # Services applicatifs
+│   ├── infrastructure/       # DB, Cache, Repositories
+│   ├── interfaces/           # API + Consoles
+│   ├── api/                  # Infrastructure technique
+│   └── models/               # Modèles Sequelize
+├── 📊 tests/                 # Tests unitaires + benchmarks
+├── 🧪 load-tests/           # Tests de charge K6
+├── ⚙️ config/               # Configuration (nginx, prometheus)
+├── 🔧 scripts/              # Scripts utilitaires
+├── 📚 docs/                 # Documentation essentielle
+├── 🐳 docker-compose.yml    # Orchestration complète
+├── 🖥️ pos-console.js        # Console POS DDD
+└── 🏢 maison-mere-console.js # Console Maison Mère DDD
+```
 
 ## ⚡ Démarrage Rapide
 
-### Prérequis
-- [Docker](https://www.docker.com/) et [Docker Compose](https://docs.docker.com/compose/)
-- [K6](https://k6.io/) (optionnel, pour les tests de charge)
-
-### 1. Lancement du Système Complet
-
+### Démarrage du Système Complet
 ```bash
-# Clone et accès au projet
-git clone <repository>
-cd LOG430_Lab_TB
-
-# Démarrage de l'infrastructure complète
 docker compose up --build
-
-# Attendre que tous les services soient prêts (1-2 minutes)
 ```
 
 **Services accessibles :**
-- 🌐 **Load Balancer (NGINX)**: http://localhost:8080
-- 🔄 **API Direct**: http://localhost:3000 (instance principale)
-- 📊 **Grafana**: http://localhost:3001 (admin/admin)
+- 🌐 **Load Balancer**: http://localhost:8000
+- 📊 **Grafana**: http://localhost:3030 (admin/admin)  
 - 📈 **Prometheus**: http://localhost:9090
-- 📋 **API Documentation**: http://localhost:8080/api-docs
 
-### 2. Vérification de la Santé du Système
-
+### Consoles Interactives
 ```bash
-# Statut de tous les services
-docker compose ps
+# Console POS (Magasin)
+docker exec -it pos-console node pos-console.js
 
-# Logs en temps réel
-docker compose logs -f
-
-# Test rapide de l'API
-curl http://localhost:8080/api/produits
+# Console Maison Mère  
+docker exec -it maison-mere-console node maison-mere-console.js
 ```
 
-### 3. Accès aux Consoles
+## 🔧 Commandes Principales
 
 ```bash
-# Console POS Magasin
-docker exec -it log430_lab_tb-api-1 node src/appConsole.js
+# Développement local
+npm run pos-console           # Console POS
+npm run maison-mere-console   # Console Maison Mère
+npm start                     # API principale
 
-# Console Maison Mère
-docker exec -it log430_lab_tb-api-1 node src/maisonMereConsole.js
+# Tests
+npm test                      # Tests unitaires
+npm run test:load            # Tests de charge K6
+npm run benchmark            # Benchmarks performance
+npm run validate             # Validation système
+
+# Données
+npm run seed                 # Initialiser données de test
 ```
 
----
+## 🎯 Use Cases Implémentés
 
-## 🔧 Fonctionnalités Métier
+### 🏪 Console POS (Magasin)
+- ✅ Création de ventes multi-articles
+- ✅ Gestion des stocks en temps réel
+- ✅ Annulation de ventes avec remise en stock
+- ✅ Consultation des produits
 
-### 💰 POS (Point de Vente - Magasin)
+### 🏢 Console Maison Mère  
+- ✅ Rapports consolidés des ventes
+- ✅ Tableau de bord global multi-magasins
+- ✅ Surveillance des stocks (ruptures, niveaux)
+- ✅ Analytics en temps réel
+
+## 📊 Performance & Monitoring
+
+- **Cache Redis** : Hit ratio >80%, latence réduite de 45%
+- **Load Balancer** : 4 instances API, tolérance aux pannes
+- **Métriques** : Prometheus + Grafana dashboards
+- **Logs structurés** : Winston pour traçabilité complète
+
+## 🏆 Avantages Architecture DDD
+
+1. **Simplicité** : 3 domaines clairs, 1 service applicatif
+2. **Maintenabilité** : Logique métier isolée et testable  
+3. **Évolutivité** : Ajout facile de nouveaux domaines
+4. **Performance** : Cache intelligent + load balancing
+5. **Observabilité** : Monitoring complet production-ready
 - ✅ Recherche de produits en temps réel
 - ✅ Création de ventes multi-articles
 - ✅ Gestion des paiements

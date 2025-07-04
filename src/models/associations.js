@@ -8,6 +8,10 @@ Utilisateur.belongsTo(Magasin, { foreignKey: 'magasinId' });
 Magasin.hasMany(Vente, { foreignKey: 'magasinId' });
 Vente.belongsTo(Magasin, { foreignKey: 'magasinId' });
 
+// Relations Utilisateur-Vente
+Utilisateur.hasMany(Vente, { foreignKey: 'utilisateurId' });
+Vente.belongsTo(Utilisateur, { foreignKey: 'utilisateurId' });
+
 // Relations Vente-LigneVente
 Vente.hasMany(LigneVente, { foreignKey: 'venteId' });
 LigneVente.belongsTo(Vente, { foreignKey: 'venteId' });
