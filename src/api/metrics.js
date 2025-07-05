@@ -13,11 +13,20 @@ const httpRequestCounter = new client.Counter({
   labelNames: ['method', 'route', 'code']
 });
 
+// Histogramme de latence HTTP
+const httpRequestDuration = new client.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Durée des requêtes HTTP en secondes',
+  labelNames: ['method', 'route', 'code'],
+  buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2, 5]
+});
+
 function metricsMiddleware(req, res, next) {
   // Exclure l'endpoint /metrics des métriques
   if (req.path === '/metrics') {
     return next();
   }
+  const start = process.hrtime();
   res.on('finish', () => {
     // Tenter d'obtenir une route expressive (ex: /api/v1/produits/:id)
     let route = req.route && req.route.path ? req.baseUrl + req.route.path : req.baseUrl || req.path || 'unknown';
@@ -26,6 +35,14 @@ function metricsMiddleware(req, res, next) {
       route: route,
       code: res.statusCode
     });
+    // Ajout de la latence
+    const diff = process.hrtime(start);
+    const duration = diff[0] + diff[1] / 1e9;
+    httpRequestDuration.observe({
+      method: req.method,
+      route: route,
+      code: res.statusCode
+    }, duration);
   });
   next();
 }

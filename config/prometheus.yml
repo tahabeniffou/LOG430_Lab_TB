@@ -5,3 +5,9 @@ scrape_configs:
     static_configs:
       - targets: ['api1:3000', 'api2:3000', 'api3:3000', 'api4:3000']
     metrics_path: /metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
