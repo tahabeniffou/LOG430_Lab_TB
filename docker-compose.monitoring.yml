@@ -24,6 +24,19 @@ services:
       - custom_network
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    networks:
+      - custom_network
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
 networks:
   custom_network:
     external: true
+
+# Tous les services de monitoring sont maintenant dans docker-compose.yml. Ce fichier n'est plus nécessaire.
