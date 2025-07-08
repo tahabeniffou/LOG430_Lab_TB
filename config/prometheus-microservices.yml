@@ -1,0 +1,44 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  # Microservices existants
+  - job_name: 'product-service'
+    static_configs:
+      - targets: ['product-service:3000']
+    metrics_path: /metrics
+
+  - job_name: 'stock-service'
+    static_configs:
+      - targets: ['stock-service:3000']
+    metrics_path: /metrics
+
+  - job_name: 'sales-service'
+    static_configs:
+      - targets: ['sales-service:3000']
+    metrics_path: /metrics
+
+  - job_name: 'reporting-service'
+    static_configs:
+      - targets: ['reporting-service:3000']
+    metrics_path: /metrics
+
+  # Nouveaux microservices e-commerce
+  - job_name: 'customer-service'
+    static_configs:
+      - targets: ['customer-service:3014']
+    metrics_path: /metrics
+
+  - job_name: 'cart-service'
+    static_configs:
+      - targets: ['cart-service:3015']
+    metrics_path: /metrics
+
+  # Monitoring système
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']

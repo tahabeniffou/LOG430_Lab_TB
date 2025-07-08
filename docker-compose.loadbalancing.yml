@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # Base de données partagée pour le load balancing
+  postgres-produit-lb:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: produit_service_lb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_produit_lb_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  # Instance 1 du service produit (port 3001)
+  produit-service-1:
+    build:
+      context: ./microservices/produit-service
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres-produit-lb
+      DB_PORT: 5432
+      DB_NAME: produit_service_lb
+      DB_USER: admin
+      DB_PASSWORD: password123
+      INSTANCE_ID: produit-instance-1
+      INSTANCE_NAME: "Produit Service Instance 1"
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres-produit-lb
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Instance 2 du service produit (port 3005)
+  produit-service-2:
+    build:
+      context: ./microservices/produit-service
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      DB_HOST: postgres-produit-lb
+      DB_PORT: 5432
+      DB_NAME: produit_service_lb
+      DB_USER: admin
+      DB_PASSWORD: password123
+      INSTANCE_ID: produit-instance-2
+      INSTANCE_NAME: "Produit Service Instance 2"
+    ports:
+      - "3005:3005"
+    depends_on:
+      - postgres-produit-lb
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Instance 3 du service produit (port 3006)
+  produit-service-3:
+    build:
+      context: ./microservices/produit-service
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      DB_HOST: postgres-produit-lb
+      DB_PORT: 5432
+      DB_NAME: produit_service_lb
+      DB_USER: admin
+      DB_PASSWORD: password123
+      INSTANCE_ID: produit-instance-3
+      INSTANCE_NAME: "Produit Service Instance 3"
+    ports:
+      - "3006:3006"
+    depends_on:
+      - postgres-produit-lb
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_produit_lb_data:
+
+networks:
+  microservices-network:
+    external: true

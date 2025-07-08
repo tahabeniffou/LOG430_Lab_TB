@@ -1,0 +1,338 @@
+version: '3.8'
+
+services:
+  # Base de données MySQL pour tous les microservices
+  mysql:
+    image: mysql:8.0
+    container_name: microservices-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: microservices_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Cache Redis partagé
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - microservices-network
+
+  # Microservice Produit (Port 3001)
+  produit-service:
+    build:
+      context: ./microservices/produit-service
+      dockerfile: ../../Dockerfile
+    container_name: produit-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=microservices_db
+      - DB_USER=app_user
+      - DB_PASSWORD=app_password
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/produit-service:/app
+      - /app/node_modules
+    working_dir: /app
+    command: ["npm", "start"]
+
+  # Microservice Magasin (Port 3002)
+  magasin-service:
+    build:
+      context: ./microservices/magasin-service
+      dockerfile: ../../Dockerfile
+    container_name: magasin-service
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=microservices_db
+      - DB_USER=app_user
+      - DB_PASSWORD=app_password
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/magasin-service:/app
+      - /app/node_modules
+    working_dir: /app
+    command: ["npm", "start"]
+
+  # Microservice Utilisateur (Port 3003)
+  utilisateur-service:
+    build:
+      context: ./microservices/utilisateur-service
+      dockerfile: ../../Dockerfile
+    container_name: utilisateur-service
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=microservices_db
+      - DB_USER=app_user
+      - DB_PASSWORD=app_password
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/utilisateur-service:/app
+      - /app/node_modules
+    working_dir: /app
+    command: ["npm", "start"]
+
+  # Microservice Vente (Port 3004)
+  vente-service:
+    build:
+      context: ./microservices/vente-service
+      dockerfile: ../../Dockerfile
+    container_name: vente-service
+    ports:
+      - "3004:3004"
+    environment:
+      - PORT=3004
+      - NODE_ENV=production
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=microservices_db
+      - DB_USER=app_user
+      - DB_PASSWORD=app_password
+      - PRODUIT_SERVICE_URL=http://produit-service:3001
+      - UTILISATEUR_SERVICE_URL=http://utilisateur-service:3003
+      - MAGASIN_SERVICE_URL=http://magasin-service:3002
+    depends_on:
+      mysql:
+        condition: service_healthy
+      produit-service:
+        condition: service_started
+      utilisateur-service:
+        condition: service_started
+      magasin-service:
+        condition: service_started
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/vente-service:/app
+      - /app/node_modules
+    working_dir: /app
+    command: ["npm", "start"]
+
+  # 2. Service Gestion des Ventes (Port 3002)
+  sales-service:
+    build:
+      context: ./microservices/sales-service
+      dockerfile: ../../Dockerfile
+    environment:
+      - PORT=3002
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=magasin_microservices
+      - DB_USER=admin
+      - DB_PASSWORD=password123
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+    networks:
+      - microservices
+    volumes:
+      - ./microservices/sales-service:/app
+    working_dir: /app
+
+  # 3. Service Gestion du Stock (Port 3003)
+  inventory-service:
+    build:
+      context: ./microservices/inventory-service
+      dockerfile: ../../Dockerfile
+    environment:
+      - PORT=3003
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=magasin_microservices
+      - DB_USER=admin
+      - DB_PASSWORD=password123
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3003:3003"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - microservices
+    volumes:
+      - ./microservices/inventory-service:/app
+    working_dir: /app
+
+  # 4. Service Gestion des Rapports (Port 3004)
+  reporting-service:
+    build:
+      context: ./microservices/reporting-service
+      dockerfile: ../../Dockerfile
+    environment:
+      - PORT=3004
+      - SALES_SERVICE_URL=http://sales-service:3002
+      - INVENTORY_SERVICE_URL=http://inventory-service:3003
+    ports:
+      - "3004:3004"
+    depends_on:
+      - sales-service
+      - inventory-service
+    networks:
+      - microservices
+    volumes:
+      - ./microservices/reporting-service:/app
+    working_dir: /app
+
+  # 5. Service Comptes Clients (Port 3005)
+  customer-account-service:
+    build:
+      context: ./microservices/customer-account-service
+      dockerfile: ../../Dockerfile
+    environment:
+      - PORT=3005
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=magasin_microservices
+      - DB_USER=admin
+      - DB_PASSWORD=password123
+    ports:
+      - "3005:3005"
+    depends_on:
+      - postgres
+    networks:
+      - microservices
+    volumes:
+      - ./microservices/customer-account-service:/app
+    working_dir: /app
+
+  # 6. Service Panier d'Achat (Port 3006)
+  shopping-cart-service:
+    build:
+      context: ./microservices/shopping-cart-service
+      dockerfile: ../../Dockerfile
+    environment:
+      - PORT=3006
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - "3006:3006"
+    depends_on:
+      - redis
+    networks:
+      - microservices
+    volumes:
+      - ./microservices/shopping-cart-service:/app
+    working_dir: /app
+
+  # 7. Service Validation des Commandes (Port 3007)
+  order-validation-service:
+    build:
+      context: ./microservices/order-validation-service
+      dockerfile: ../../Dockerfile
+    environment:
+      - PORT=3007
+      - INVENTORY_SERVICE_URL=http://inventory-service:3003
+      - CART_SERVICE_URL=http://shopping-cart-service:3006
+      - PRODUCT_SERVICE_URL=http://product-management-service:3001
+    ports:
+      - "3007:3007"
+    depends_on:
+      - inventory-service
+      - shopping-cart-service
+      - product-management-service
+    networks:
+      - microservices
+    volumes:
+      - ./microservices/order-validation-service:/app
+    working_dir: /app
+
+  # API Gateway - Load Balancer Nginx
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./config/nginx-microservices.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - product-management-service
+      - sales-service
+      - inventory-service
+      - reporting-service
+      - customer-account-service
+      - shopping-cart-service
+      - order-validation-service
+    networks:
+      - microservices
+
+  # Monitoring - Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus-microservices-config.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - microservices
+
+  # Monitoring - Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - microservices
+
+volumes:
+  mysql_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  microservices-network:
+    driver: bridge

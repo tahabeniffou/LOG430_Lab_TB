@@ -1,0 +1,76 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus lui-même
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Product Management Service
+  - job_name: 'product-management-service'
+    static_configs:
+      - targets: ['product-management-service:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Sales Service
+  - job_name: 'sales-service'
+    static_configs:
+      - targets: ['sales-service:3002']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Inventory Service
+  - job_name: 'inventory-service'
+    static_configs:
+      - targets: ['inventory-service:3003']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Reporting Service
+  - job_name: 'reporting-service'
+    static_configs:
+      - targets: ['reporting-service:3004']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 5s
+
+  # Customer Account Service
+  - job_name: 'customer-account-service'
+    static_configs:
+      - targets: ['customer-account-service:3005']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Shopping Cart Service
+  - job_name: 'shopping-cart-service'
+    static_configs:
+      - targets: ['shopping-cart-service:3006']
+    metrics_path: '/metrics'
+    scrape_interval: 5s  # Plus fréquent car les paniers changent rapidement
+    scrape_timeout: 3s
+
+  # Order Validation Service
+  - job_name: 'order-validation-service'
+    static_configs:
+      - targets: ['order-validation-service:3007']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # API Gateway via Nginx (si exposé)
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['nginx:80']
+    metrics_path: '/health'
+    scrape_interval: 30s

@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # Base de données partagée pour les 3 instances
+  produit-db:
+    image: postgres:13
+    container_name: produit-database
+    environment:
+      POSTGRES_DB: produit_service
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5433:5432"
+    volumes:
+      - produit-db-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Instance 1 du service produit
+  produit-service-1:
+    build:
+      context: ./microservices/produit-service
+      dockerfile: Dockerfile
+    image: produit-service:latest
+    container_name: produit-instance-1
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: produit-db
+      DB_PORT: 5432
+      DB_NAME: produit_service
+      DB_USER: admin
+      DB_PASSWORD: password123
+      DB_DIALECT: postgres
+      INSTANCE_ID: produit-instance-1
+      INSTANCE_NAME: "Produit Service Instance 1"
+    ports:
+      - "3001:3001"
+    depends_on:
+      produit-db:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Instance 2 du service produit
+  produit-service-2:
+    image: produit-service:latest
+    container_name: produit-instance-2
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      DB_HOST: produit-db
+      DB_PORT: 5432
+      DB_NAME: produit_service
+      DB_USER: admin
+      DB_PASSWORD: password123
+      DB_DIALECT: postgres
+      INSTANCE_ID: produit-instance-2
+      INSTANCE_NAME: "Produit Service Instance 2"
+    ports:
+      - "3005:3005"
+    depends_on:
+      produit-db:
+        condition: service_healthy
+      produit-service-1:
+        condition: service_started
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Instance 3 du service produit
+  produit-service-3:
+    image: produit-service:latest
+    container_name: produit-instance-3
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      DB_HOST: produit-db
+      DB_PORT: 5432
+      DB_NAME: produit_service
+      DB_USER: admin
+      DB_PASSWORD: password123
+      DB_DIALECT: postgres
+      INSTANCE_ID: produit-instance-3
+      INSTANCE_NAME: "Produit Service Instance 3"
+    ports:
+      - "3006:3006"
+    depends_on:
+      produit-db:
+        condition: service_healthy
+      produit-service-1:
+        condition: service_started
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  produit-db-data:
+
+networks:
+  microservices-network:
+    external: true

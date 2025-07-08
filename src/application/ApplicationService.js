@@ -1,60 +1,43 @@
-// Service applicatif simplifié pour les use cases principaux
-const VenteService = require('../domain/vente/VenteService');
-const SequelizeVenteRepository = require('../infrastructure/database/SequelizeVenteRepository');
-const SequelizeProduitRepository = require('../infrastructure/database/SequelizeProduitRepository');
-const SequelizeUtilisateurRepository = require('../infrastructure/database/SequelizeUtilisateurRepository');
+// Service applicatif pour le monolithe - logique métier migrée vers les microservices
+// Ce service peut maintenant faire des appels HTTP aux microservices métier
 
 class ApplicationService {
   constructor(db) {
-    this.venteRepository = new SequelizeVenteRepository(db);
-    this.produitRepository = new SequelizeProduitRepository(db);
-    this.utilisateurRepository = new SequelizeUtilisateurRepository(db);
-    this.venteService = new VenteService(this.venteRepository, this.produitRepository);
+    this.db = db;
+    // TODO: Configurer les clients HTTP pour communiquer avec les microservices
+    // - produit-service: http://localhost:3001
+    // - magasin-service: http://localhost:3002  
+    // - utilisateur-service: http://localhost:3003
+    // - vente-service: http://localhost:3004
   }
 
-  // Use Case: Créer une vente
+  // Méthodes d'orchestration qui devraient appeler les microservices
   async creerVente(donneesVente) {
-    return await this.venteService.creerVente(donneesVente);
+    throw new Error('Fonctionnalité migrée vers vente-service sur le port 3004');
   }
 
-  // Use Case: Annuler une vente
   async annulerVente(venteId) {
-    return await this.venteService.annulerVente(venteId);
+    throw new Error('Fonctionnalité migrée vers vente-service sur le port 3004');
   }
 
-  // Use Case: Lister les produits
   async listerProduits(filtres = {}) {
-    if (filtres.categorie) {
-      return await this.produitRepository.listerParCategorie(filtres.categorie);
-    }
-    if (filtres.nom) {
-      return await this.produitRepository.rechercherParNom(filtres.nom);
-    }
-    return await this.produitRepository.listerTous();
+    throw new Error('Fonctionnalité migrée vers produit-service sur le port 3001');
   }
 
-  // Use Case: Consulter les ventes
   async consulterVentes(magasinId = null) {
-    if (magasinId) {
-      return await this.venteRepository.listerParMagasin(magasinId);
-    }
-    return await this.venteRepository.listerToutes();
+    throw new Error('Fonctionnalité migrée vers vente-service sur le port 3004');
   }
 
-  // Use Case: Obtenir un produit spécifique
   async obtenirProduit(produitId) {
-    return await this.produitRepository.trouverParId(produitId);
+    throw new Error('Fonctionnalité migrée vers produit-service sur le port 3001');
   }
 
-  // Use Case: Obtenir le stock d'un produit (alias pour compatibilité)
   async obtenirStock(produitId) {
-    const produit = await this.produitRepository.trouverParId(produitId);
-    return produit ? produit.stock : 0;
+    throw new Error('Fonctionnalité migrée vers produit-service sur le port 3001');
   }
 
-  // Use Case: Consulter une vente par son ID
   async consulterVente(venteId) {
-    return await this.venteRepository.trouverParId(venteId);
+    throw new Error('Fonctionnalité migrée vers vente-service sur le port 3004');
   }
 }
 

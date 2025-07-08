@@ -68,4 +68,68 @@ sudo rm -rf prometheus_data/
 
 ---
 
-Pour toute question, voir les fichiers de configuration ou contacter l’équipe pédagogique.
+# Évolution vers Architecture Microservices (Lab 5)
+
+## Contexte et Objectifs
+Extension du Lab 4 vers une architecture orientée microservices pour un **système de gestion de magasins physiques avec maison mère**, en décomposant le système existant selon les domaines métier identifiés.
+
+## Architecture Cible - Domaine Métier Réel
+
+### Services Magasin (Opérations Locales)
+1. **Service Ventes** - Gestion des transactions en magasin (caisses)
+2. **Service Stock Local** - Gestion des stocks par magasin
+3. **Service Utilisateurs** - Gestion des employés (vendeurs, managers)
+4. **Service Magasins** - Configuration et données des magasins
+
+### Services Maison Mère (Centralisation)
+5. **Service Reporting** - Rapports consolidés et analytics
+6. **Service Stock Central** - Vue globale des stocks tous magasins
+7. **Service Réapprovisionnement** - Gestion des demandes et distributions
+
+### Services Support
+8. **Service Produits** - Catalogue centralisé des produits
+9. **Service Authentification** - Gestion des sessions et autorisations
+
+### API Gateway
+- **Choix** : Kong / KrakenD / Spring Cloud Gateway
+- **Fonctionnalités** : 
+  - Routage par type d'utilisateur (magasin vs maison mère)
+  - Load balancing entre magasins
+  - Logging centralisé des opérations
+  - Sécurité et autorisations par rôle
+- **Point d'entrée unique** : http://localhost:8080
+
+## Nouveaux Scénarios
+
+### 4. Architecture Microservices sans API Gateway
+- Fichier : `docker-compose.scenario4.yml`
+- Test de charge : `tests/load/loadtest-microservices.js`
+- Services séparés avec communication directe
+- Simulation d'opérations multi-magasins
+
+### 5. Architecture Microservices avec API Gateway
+- Fichier : `docker-compose.scenario5.yml`
+- Test de charge : `tests/load/loadtest-api-gateway.js`
+- Routage intelligent selon le contexte (magasin/maison mère)
+
+## Tests de Performance Comparatifs
+```bash
+# Tester l'ancienne vs nouvelle architecture
+k6 run tests/load/loadtest-multi-api-lb-redis.js > results_monolith.txt
+k6 run tests/load/loadtest-microservices.js > results_microservices.txt
+k6 run tests/load/loadtest-api-gateway.js > results_api_gateway.txt
+```
+
+## Métriques Spécifiques au Domaine
+- **Latence des transactions de vente** (critique pour les caisses)
+- **Throughput des opérations stock** (temps réel important)
+- **Performance des rapports maison mère** (analytics)
+- **Disponibilité par magasin** (résilience locale)
+- **Cohérence des données stock** (synchronisation)
+
+## Prochaines Étapes
+1. Découpage des services selon le domaine métier
+2. Implémentation de la communication inter-services
+3. Configuration de l'API Gateway avec routage par contexte
+4. Tests de charge simulant opérations multi-magasins
+5. Analyse de la résilience et cohérence des données

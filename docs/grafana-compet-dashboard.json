@@ -24,7 +24,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "eer5k9ogyxvk0e"
+        "uid": "eer8pnag6cveof"
       },
       "fieldConfig": {
         "defaults": {
@@ -112,7 +112,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "eer5k9ogyxvk0e"
+        "uid": "eer8pnag6cveof"
       },
       "fieldConfig": {
         "defaults": {
@@ -204,7 +204,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "eer5k9ogyxvk0e"
+        "uid": "eer8pnag6cveof"
       },
       "fieldConfig": {
         "defaults": {
@@ -284,19 +284,19 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "(rate(http_requests_total{code=~\"500\"}[5m]) / rate(http_requests_total[5m])) * 100",
-          "legendFormat": "__auto",
+          "expr": "(rate(http_requests_total{code=~\"[45].*\"}[5m]) / rate(http_requests_total[5m])) * 100",
+          "legendFormat": "Taux d'erreurs (%)",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Taux d'erreurs 500",
+      "title": "Taux d'erreurs (4xx et 5xx)",
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "eer5k9ogyxvk0e"
+        "uid": "eer8pnag6cveof"
       },
       "fieldConfig": {
         "defaults": {
@@ -388,7 +388,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "eer5k9ogyxvk0e"
+        "uid": "eer8pnag6cveof"
       },
       "fieldConfig": {
         "defaults": {
@@ -489,12 +489,12 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "New dashboard",
   "uid": "b45ade29-57a9-4561-8551-7876c36ac7ad",
-  "version": 1
+  "version": 2
 }
