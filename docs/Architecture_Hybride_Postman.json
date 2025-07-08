@@ -1,0 +1,499 @@
+{
+	"info": {
+		"_postman_id": "12345678-1234-1234-1234-123456789012",
+		"name": "Architecture Hybride - LOG430 Lab TB",
+		"description": "Collection complète pour tester l'architecture hybride avec Kong Gateway",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "gateway_url",
+			"value": "http://localhost:8001",
+			"description": "URL Kong Gateway"
+		},
+		{
+			"key": "router_url", 
+			"value": "http://localhost:9000",
+			"description": "URL Hybrid Router direct"
+		},
+		{
+			"key": "api_key",
+			"value": "test-api-key-12345",
+			"description": "Clé API pour tests"
+		}
+	],
+	"item": [
+		{
+			"name": "🏪 Console POS",
+			"description": "Tests pour la console Point de Vente",
+			"item": [
+				{
+					"name": "Lister produits (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "pos",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/pos/produits?search=iPhone",
+							"host": ["{{gateway_url}}"],
+							"path": ["pos", "produits"],
+							"query": [
+								{
+									"key": "search",
+									"value": "iPhone"
+								}
+							]
+						},
+						"description": "Récupère les produits via le système legacy"
+					}
+				},
+				{
+					"name": "Vérifier stock (Microservice)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "pos",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/pos/stock/123",
+							"host": ["{{gateway_url}}"],
+							"path": ["pos", "stock", "123"]
+						},
+						"description": "Vérifie le stock en temps réel via microservice"
+					}
+				},
+				{
+					"name": "Créer vente (Legacy)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "pos",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": 123,\n  \"quantity\": 1,\n  \"customerId\": 456,\n  \"paymentMethod\": \"card\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/pos/ventes",
+							"host": ["{{gateway_url}}"],
+							"path": ["pos", "ventes"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🏢 Console Maison Mère",
+			"description": "Tests pour la console administration",
+			"item": [
+				{
+					"name": "Dashboard (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "maisonmere",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/maisonmere/dashboard",
+							"host": ["{{gateway_url}}"],
+							"path": ["maisonmere", "dashboard"]
+						}
+					}
+				},
+				{
+					"name": "Rapports Analytics (Microservice)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "maisonmere",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/maisonmere/reports/analytics?period=month",
+							"host": ["{{gateway_url}}"],
+							"path": ["maisonmere", "reports", "analytics"],
+							"query": [
+								{
+									"key": "period",
+									"value": "month"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔌 API Moderne",
+			"description": "Tests pour l'API REST moderne",
+			"item": [
+				{
+					"name": "Catalogue produits (Microservice)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "api",
+								"type": "text"
+							},
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/api/v2/produits",
+							"host": ["{{gateway_url}}"],
+							"path": ["api", "v2", "produits"]
+						}
+					}
+				},
+				{
+					"name": "Créer produit (Microservice)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Nouveau Produit API\",\n  \"price\": 199.99,\n  \"category\": \"Electronics\",\n  \"description\": \"Produit créé via API moderne\"\n}"
+						},
+						"url": {
+							"raw": "{{gateway_url}}/api/v2/produits",
+							"host": ["{{gateway_url}}"],
+							"path": ["api", "v2", "produits"]
+						}
+					}
+				},
+				{
+					"name": "Analytics API (Microservice)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "{{api_key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/api/v2/analytics",
+							"host": ["{{gateway_url}}"],
+							"path": ["api", "v2", "analytics"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "📱 Web/Mobile",
+			"description": "Tests pour l'interface web/mobile",
+			"item": [
+				{
+					"name": "Catalogue web (Microservice)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "web",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/web/catalog?page=1&limit=10",
+							"host": ["{{gateway_url}}"],
+							"path": ["web", "catalog"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🔍 Health & Monitoring",
+			"description": "Tests de santé et monitoring",
+			"item": [
+				{
+					"name": "Health Check Global",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{gateway_url}}/health",
+							"host": ["{{gateway_url}}"],
+							"path": ["health"]
+						}
+					}
+				},
+				{
+					"name": "Métriques Prometheus",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{router_url}}/metrics",
+							"host": ["{{router_url}}"],
+							"path": ["metrics"]
+						}
+					}
+				},
+				{
+					"name": "Kong Admin - Services",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "http://localhost:8002/services",
+							"host": ["http://localhost:8002"],
+							"path": ["services"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "⚡ Tests de Performance",
+			"description": "Tests comparatifs direct vs gateway",
+			"item": [
+				{
+					"name": "Direct - Produits (Legacy)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "pos",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{router_url}}/pos/produits",
+							"host": ["{{router_url}}"],
+							"path": ["pos", "produits"]
+						},
+						"description": "Appel direct au routeur (ancienne architecture)"
+					}
+				},
+				{
+					"name": "Gateway - Produits (Legacy)", 
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type", 
+								"value": "pos",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/pos/produits",
+							"host": ["{{gateway_url}}"],
+							"path": ["pos", "produits"]
+						},
+						"description": "Appel via Kong Gateway (nouvelle architecture)"
+					}
+				},
+				{
+					"name": "Direct - API Produits (Microservice)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "api",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{router_url}}/api/v2/produits",
+							"host": ["{{router_url}}"],
+							"path": ["api", "v2", "produits"]
+						}
+					}
+				},
+				{
+					"name": "Gateway - API Produits (Microservice)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "api",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/api/v2/produits",
+							"host": ["{{gateway_url}}"],
+							"path": ["api", "v2", "produits"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "🧪 Tests de Sécurité",
+			"description": "Tests CORS, Rate Limiting, etc.",
+			"item": [
+				{
+					"name": "Test CORS Preflight",
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://localhost:3000",
+								"type": "text"
+							},
+							{
+								"key": "Access-Control-Request-Method",
+								"value": "GET",
+								"type": "text"
+							},
+							{
+								"key": "Access-Control-Request-Headers",
+								"value": "X-Client-Type",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/pos/produits",
+							"host": ["{{gateway_url}}"],
+							"path": ["pos", "produits"]
+						}
+					}
+				},
+				{
+					"name": "Test Rate Limiting",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Client-Type",
+								"value": "pos",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/pos/produits",
+							"host": ["{{gateway_url}}"],
+							"path": ["pos", "produits"]
+						}
+					},
+					"description": "Faire plusieurs appels rapides pour tester le rate limiting"
+				},
+				{
+					"name": "Test API Key Invalid",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-API-Key",
+								"value": "invalid-key",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{gateway_url}}/api/v2/produits",
+							"host": ["{{gateway_url}}"],
+							"path": ["api", "v2", "produits"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Ajouter timestamp pour les tests",
+					"pm.globals.set('timestamp', new Date().toISOString());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript", 
+				"exec": [
+					"// Tests automatiques pour tous les appels",
+					"pm.test('Status code is successful', function () {",
+					"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+					"});",
+					"",
+					"pm.test('Response time is less than 2000ms', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+					"});",
+					"",
+					"pm.test('Content-Type header is present', function () {",
+					"    pm.expect(pm.response.headers.get('Content-Type')).to.exist;",
+					"});",
+					"",
+					"// Vérifier les headers de sécurité Kong",
+					"pm.test('Kong Gateway headers present', function () {",
+					"    const gatewayHeader = pm.response.headers.get('X-Gateway');",
+					"    if (gatewayHeader) {",
+					"        pm.expect(gatewayHeader).to.include('Kong');",
+					"    }",
+					"});",
+					"",
+					"// Logger les métriques pour analyse",
+					"console.log('Response Time:', pm.response.responseTime + 'ms');",
+					"console.log('Response Size:', pm.response.responseSize + ' bytes');"
+				]
+			}
+		}
+	]
+}

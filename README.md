@@ -1,190 +1,160 @@
-# LOG430_Lab_TB – Système de Gestion de Magasin Distribué
+# Architecture Hybride - LOG430 Lab TB
 
-## Présentation
-Ce projet est une application Node.js distribuée permettant la gestion de magasins, produits, utilisateurs et ventes, avec des APIs RESTful, un système de cache, un load balancer, une observabilité avancée (Prometheus, Grafana) et des tests de charge automatisés.
+## 🏗️ Vue d'ensemble
 
----
+Cette architecture hybride combine :
+- **Système de base (Legacy)** pour les consoles POS et Maison Mère existantes
+- **4 Microservices essentiels** : Produit, Vente, Stock, Reporting
+- **Routeur intelligent** qui décide automatiquement vers quel système router
+- **Kong Gateway** pour la sécurité, monitoring et gestion centralisée
 
-## Table des matières
-- [Fonctionnalités](#fonctionnalités)
-- [Architecture](#architecture)
-- [Technologies utilisées](#technologies-utilisées)
-- [Démarrage rapide](#démarrage-rapide)
-- [Déploiement](#déploiement)
-- [Utilisation des scripts & tests de charge](#utilisation-des-scripts--tests-de-charge)
-- [Observabilité & Monitoring](#observabilité--monitoring)
-- [Tests de charge](#tests-de-charge)
-- [Structure du projet](#structure-du-projet)
-- [Auteurs](#auteurs)
+## 🎯 Routage Intelligent
 
----
+| Console | Ressource | Destination |
+|---------|-----------|-------------|
+| **POS** | Produits, Ventes | → Système de base |
+| **POS** | Stock temps réel | → Stock Microservice |
+| **Maison Mère** | Produits, Ventes | → Système de base |
+| **Maison Mère** | Rapports avancés | → Reporting Microservice |
+| **API v2** | Tout | → Microservices |
+| **API v1** | Tout | → Système de base |
 
-## Fonctionnalités
-- Gestion des produits, utilisateurs, magasins et ventes via API REST.
-- Système de cache (mémoire ou Redis) pour accélérer les lectures.
-- Load balancing HTTP pour la haute disponibilité.
-- Exposition de métriques Prometheus pour le monitoring.
-- Dashboards Grafana pour la visualisation des performances.
-- Tests de charge réalistes (k6).
+## 🚀 Démarrage Rapide
 
----
-
-## Architecture
-
-### Vue d’ensemble
-- **API Node.js** : Plusieurs instances, stateless, exposant les routes REST.
-- **Load Balancer (Nginx)** : Répartit la charge entre les instances API.
-- **Cache** : Optionnel, activable en mémoire ou Redis.
-- **Base de données** : PostgreSQL (via Sequelize ORM).
-- **Observabilité** : Prometheus (scraping des métriques), Grafana (visualisation).
-- **Tests de charge** : Scripts k6 simulant des scénarios réels.
-
-```
-[Client] ⇄ [Load Balancer] ⇄ [API Node.js xN] ⇄ [PostgreSQL]
-                                 ⇅
-                              [Redis]
-```
-
----
-
-## Technologies utilisées
-- **Node.js** (API, scripts)
-- **Express.js** (serveur HTTP)
-- **Sequelize** (ORM PostgreSQL)
-- **Redis** (cache distribué)
-- **Nginx** (load balancing)
-- **Docker & Docker Compose** (déploiement)
-- **Prometheus** (monitoring)
-- **Grafana** (dashboards)
-- **k6** (tests de charge)
-- **Jest** (tests unitaires)
-
----
-
-## Démarrage rapide
-
-1. **Cloner le projet**
-2. **Configurer les variables d’environnement** (voir `config/config.json`)
-3. **Lancer l’infrastructure** :
-   ```bash
-   docker-compose up --build -d
-   ```
-4. **Accéder à l’API** :
-   - API unique : http://localhost:3001
-   - Load balancer : http://localhost:8000
-5. **Accéder à Grafana** : http://localhost:3030 (admin/admin)
-
----
-
-## Déploiement
-
-Le projet est entièrement conteneurisé avec Docker Compose.
-
-### Prérequis
-- Docker et Docker Compose installés
-- (Optionnel) k6 installé pour les tests de charge (`sudo apt install k6`)
-
-### Lancer tous les services
 ```bash
-docker-compose up --build -d
+# Démarrer l'architecture complète
+./start.sh
+
+# Ou manuellement
+docker-compose up -d
+
+# Vérifier le statut
+docker-compose ps
 ```
 
-### Arrêter tous les services
+## 🔗 Points d'Accès
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Kong Gateway** | http://localhost:8001 | API Gateway principal |
+| **Routeur Hybride** | http://localhost:9000 | Accès direct |
+| **Kong Admin** | http://localhost:8002 | Administration Kong |
+| **Load Balancer** | http://localhost:8000 | Load balancer services |
+| **Prometheus** | http://localhost:9090 | Métriques |
+| **Grafana** | http://localhost:3333 | Dashboards (admin/admin) |
+
+## � Sécurité et CORS
+
+L'architecture inclut :
+- **CORS configuré** pour les domaines autorisés
+- **Rate Limiting** : 200 req/min par défaut
+- **API Keys** pour les intégrations externes
+- **Headers de sécurité** ajoutés automatiquement
+- **Logs d'accès** centralisés
+
+## �📋 Exemples d'Utilisation
+
+### Console POS (via Gateway)
+```bash
+# Produits (va vers legacy)
+curl -H "X-Client-Type: pos" http://localhost:8001/pos/produits
+
+# Stock temps réel (va vers microservice)
+curl -H "X-Client-Type: pos" http://localhost:8001/pos/stock/123
+```
+
+### Console Maison Mère (via Gateway)
+```bash
+# Dashboard (va vers legacy)
+curl -H "X-Client-Type: maisonmere" http://localhost:8001/maisonmere/dashboard
+
+# Rapports (va vers microservice)
+curl -H "X-Client-Type: maisonmere" http://localhost:8001/maisonmere/reports/analytics
+```
+
+### API Moderne (via Gateway)
+```bash
+# Microservices avec authentification
+curl -H "X-API-Key: test-key" http://localhost:8001/api/v2/produits
+curl -H "X-API-Key: test-key" http://localhost:8001/api/v2/analytics
+```
+
+## 🧪 Tests et Validation
+
+### Tests Complets Automatisés
+```bash
+# Lancer tous les tests (santé, sécurité, performance, comparaisons)
+./test-complete.sh
+```
+
+### Tests de Performance Comparatifs
+```bash
+# Tests k6 - Direct vs Gateway
+k6 run tests/performance-comparison.js
+```
+
+### Collection Postman
+Importez `docs/Architecture_Hybride_Postman.json` dans Postman pour tous les tests.
+
+## 📊 Monitoring et Observabilité
+
+### Dashboards Grafana
+- **Architecture Hybride - Comparaison Performance** : Métriques Direct vs Gateway
+- **Kong Gateway Security** : CORS, Rate limiting, erreurs
+- **Services Health** : État de tous les microservices
+
+### Métriques Prometheus
+- Latence P95/P50 par architecture
+- Taux d'erreur comparatif
+- Throughput par console
+- Distribution du routage
+
+## 🗄️ Base de Données
+
+- **PostgreSQL** (Port 5433) : Microservice Produit
+- **MySQL** (Port 3306) : Système de base + autres microservices
+- **Redis** (Port 6379) : Cache partagé
+
+## � Documentation API
+
+- **Swagger/OpenAPI** : `docs/swagger-api.yml`
+- **Postman Collection** : `docs/Architecture_Hybride_Postman.json`
+- **Dashboard Grafana** : `config/grafana-dashboard-comparison.json`
+
+## ⚡ Comparaison Architecture
+
+### Avantages Gateway (Kong)
+- ✅ Sécurité renforcée (CORS, Rate limiting)
+- ✅ Observabilité centralisée
+- ✅ Gestion unifiée des APIs
+- ✅ Transformation des requêtes/réponses
+
+### Coûts Gateway
+- ➖ Latence additionnelle (~10-30ms)
+- ➖ Point de défaillance supplémentaire
+- ➖ Complexité de configuration
+
+### Résultats Tests Performance
+Les tests montrent un overhead acceptable du Gateway avec une sécurité et observabilité significativement améliorées.
+
+## 🛑 Arrêt
+
 ```bash
 docker-compose down
 ```
 
-### (Re)générer la base de données
-```bash
-docker-compose exec api1 node src/models/sync.js
-```
+## 🔧 Configuration Avancée
+
+### Variables d'Environnement
+Modifiez `docker-compose.yml` pour ajuster :
+- Limites de rate limiting
+- Domaines CORS autorisés
+- Clés API
+- Timeouts
+
+### Règles de Routage
+Modifiez `hybrid-router.js` pour personnaliser la logique de routage.
 
 ---
 
-## Utilisation des scripts & tests de charge
-
-### Scripts de test de charge k6
-Les scripts sont dans `tests/load/` :
-- `loadtest-single-api.js` : un seul API, sans cache, sans load balancer
-- `loadtest-multi-api-lb.js` : plusieurs API, load balancer, sans cache
-- `loadtest-multi-api-lb-redis.js` : plusieurs API, load balancer, cache Redis
-
-### Script d’automatisation complet
-Le script `scripts/run_load_tests.sh` automatise tout le processus :
-- Modifie la configuration du cache selon le scénario
-- (Re)démarre les bons services Docker
-- Réinitialise les métriques Prometheus
-- Lance le test de charge k6 adapté
-- Met une pause pour observer les résultats sur Grafana
-
-#### Lancer tous les tests de charge automatiquement
-```bash
-chmod +x scripts/run_load_tests.sh
-./scripts/run_load_tests.sh
-```
-
-#### Lancer un test de charge manuellement
-```bash
-k6 run tests/load/loadtest-single-api.js
-```
-
----
-
-## Observabilité & Monitoring
-- **Prometheus** scrape les métriques exposées par chaque API (`/metrics`).
-- **Grafana** permet de visualiser :
-  - Latence moyenne
-  - Requêtes par seconde
-  - Taux d’erreurs
-  - Saturation CPU/mémoire
-- Des dashboards prêts à l’emploi sont fournis ou à créer via l’interface Grafana.
-
----
-
-## Tests de charge
-Les scripts de charge sont dans `tests/load/` :
-- `loadtest-single-api.js` : un seul API, sans cache, sans load balancer
-- `loadtest-multi-api-lb.js` : plusieurs API, load balancer, sans cache
-- `loadtest-multi-api-lb-redis.js` : plusieurs API, load balancer, cache Redis
-
-**Lancer un test** :
-```bash
-k6 run tests/load/loadtest-single-api.js
-```
-Adapte l’URL cible selon la structure testée.
-
----
-
-## Structure du projet
-```
-├── app.js
-├── docker-compose.yml
-├── Dockerfile
-├── config/
-│   ├── config.json
-│   ├── nginx.conf
-│   └── prometheus.yml
-├── src/
-│   ├── api/
-│   ├── application/
-│   ├── domain/
-│   ├── infrastructure/
-│   ├── interfaces/
-│   └── models/
-├── tests/
-│   ├── load/
-│   │   ├── loadtest-single-api.js
-│   │   ├── loadtest-multi-api-lb.js
-│   │   └── loadtest-multi-api-lb-redis.js
-│   └── ...
-├── scripts/
-│   └── run_load_tests.sh
-├── docs/
-└── ...
-```
-
----
-
-## Auteurs
-- Taha Beniffou, étudiant en LOG430 (Architecture logicielle), École de technologie logicielle
-
+**🎯 Cette architecture hybride permet une migration progressive vers les microservices tout en conservant la stabilité du système legacy, avec une sécurité et une observabilité de niveau production.**

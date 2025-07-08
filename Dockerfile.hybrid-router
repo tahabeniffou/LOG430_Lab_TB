@@ -1,0 +1,21 @@
+# Dockerfile pour le routeur hybride
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copier et installer les dépendances du routeur
+COPY package-hybrid-router.json ./package.json
+RUN npm install --only=production
+
+# Copier le code du routeur
+COPY hybrid-router.js ./
+
+# Exposer le port
+EXPOSE 9000
+
+# Variable d'environnement
+ENV NODE_ENV=production
+ENV PORT=9000
+
+# Commande de démarrage
+CMD ["node", "hybrid-router.js"]

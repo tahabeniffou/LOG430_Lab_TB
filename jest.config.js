@@ -1,23 +1,109 @@
+/**
+ * Configuration Jest pour les tests de l'architecture hybride
+ */
+
 module.exports = {
+  // Environnement de test
   testEnvironment: 'node',
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  
+  // Timeout global pour tous les tests
+  testTimeout: 30000,
+  
+  // Patterns de fichiers de tests
   testMatch: [
-    '<rootDir>/tests/**/*.test.js'
+    '**/tests/**/*.test.js',
+    '**/__tests__/**/*.js',
+    '**/?(*.)+(spec|test).js'
   ],
-  collectCoverage: true,
+  
+  // Fichiers à ignorer
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/coverage/',
+    '/reports/'
+  ],
+  
+  // Configuration de la couverture de code
+  collectCoverage: false, // Activé uniquement quand demandé
   collectCoverageFrom: [
+    '*.js',
     'src/**/*.js',
-    'app.js',
-    '!src/models/seed.js',
-    '!src/models/sync.js',
-    '!**/node_modules/**'
+    'microservices/**/*.js',
+    '!node_modules/**',
+    '!coverage/**',
+    '!reports/**',
+    '!tests/**',
+    '!jest.config.js',
+    '!eslint.config.mjs'
   ],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  
+  // Répertoire de sortie pour la couverture
+  coverageDirectory: 'reports/coverage',
+  
+  // Format des rapports de couverture
+  coverageReporters: [
+    'text',
+    'lcov',
+    'html',
+    'json'
+  ],
+  
+  // Seuils de couverture (optionnel)
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 60,
+      statements: 60
+    }
+  },
+  
+  // Setup avant tous les tests
+  setupFilesAfterEnv: ['<rootDir>/tests/jest.setup.js'],
+  
+  // Variables d'environnement pour les tests
+  testEnvironmentOptions: {
+    NODE_ENV: 'test'
+  },
+  
+  // Transformation des modules (si nécessaire)
+  transform: {},
+  
+  // Extensions de fichiers supportées
+  moduleFileExtensions: ['js', 'json', 'node'],
+  
+  // Verbosité des tests
   verbose: true,
-  clearMocks: true,
-  resetMocks: true,
-  restoreMocks: true,
-  testTimeout: 10000, // 10 secondes maximum par test
-  forceExit: true // Force Jest à se fermer même en cas de handles ouverts
+  
+  // Couleurs dans la sortie
+  colors: true,
+  
+  // Comportement en cas d'échec
+  bail: false, // Continue même si un test échoue
+  
+  // Cache Jest
+  cache: true,
+  cacheDirectory: '<rootDir>/.jest-cache',
+  
+  // Ordre d'exécution des tests
+  testSequencer: '<rootDir>/tests/jest.sequencer.js',
+  
+  // Reporters personnalisés
+  reporters: [
+    'default',
+    ['jest-html-reporters', {
+      publicPath: './reports',
+      filename: 'jest-report.html',
+      expand: true,
+      hideIcon: false,
+      pageTitle: 'Tests Architecture Hybride'
+    }]
+  ],
+  
+  // Modules à mocker automatiquement
+  automock: false,
+  
+  // Fichiers de setup global
+  globalSetup: '<rootDir>/tests/jest.globalSetup.js',
+  globalTeardown: '<rootDir>/tests/jest.globalTeardown.js'
 };

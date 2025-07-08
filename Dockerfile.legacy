@@ -1,0 +1,25 @@
+# Dockerfile pour le système de base (legacy)
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copier les package.json
+COPY package*.json ./
+
+# Installer les dépendances
+RUN npm install --only=production
+
+# Copier le code source
+COPY app/ ./app/
+COPY src/ ./src/
+COPY config/ ./config/
+
+# Exposer le port
+EXPOSE 3000
+
+# Variable d'environnement
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Commande de démarrage
+CMD ["node", "app/app.js"]
