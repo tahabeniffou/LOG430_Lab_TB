@@ -7,6 +7,7 @@ require('dotenv').config();
 // Import de la logique métier du microservice
 const Vente = require('./src/domain/Vente');
 const LigneVente = require('./src/domain/LigneVente');
+const VenteRepository = require('./src/domain/VenteRepository');
 const SequelizeVenteRepository = require('./src/infrastructure/SequelizeVenteRepository');
 const { sequelize } = require('./src/infrastructure/database');
 

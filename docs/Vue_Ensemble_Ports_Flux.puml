@@ -1,0 +1,284 @@
+@startuml Vue_Ensemble_Ports_Flux
+!theme cerulean-outline
+title Vue d'Ensemble - Ports, Flux et Données Architecture Hybride
+
+!define CONSOLE #E6F3FF
+!define ROUTER #FFE6CC  
+!define GATEWAY #E6FFE6
+!define LEGACY #FFE6E6
+!define MICRO #F0E6FF
+!define DB #E6E6FF
+!define CACHE #FFF0E6
+
+cloud "Internet" as INTERNET {
+  actor "Utilisateurs POS" as USERS_POS
+  actor "Admin Maison Mère" as USERS_MM
+  actor "Apps Externes" as USERS_API
+  actor "Clients Web/Mobile" as USERS_WEB
+}
+
+package "Load Balancer" as LB #ROUTER {
+  component "Nginx LB" as NGINX [
+    **Nginx Load Balancer**
+    Port: 80, 443
+    ----
+    • SSL Termination
+    • Load Balancing
+    • Rate Limiting
+    • Health Checks
+  ]
+}
+
+package "Hybrid Routing Layer" as HRL #ROUTER {
+  component "Hybrid Router" as HROUTER [
+    **Hybrid Router**
+    Port: 9000
+    ----
+    • Intelligent Routing
+    • Client Detection
+    • Fallback Logic
+    • Request Transformation
+  ]
+}
+
+package "API Gateway" as GW #GATEWAY {
+  component "Kong Gateway" as KONG [
+    **Kong Gateway**
+    Ports: 8000, 8001, 8443, 8444
+    ----
+    • API Management
+    • Authentication
+    • Rate Limiting
+    • Monitoring
+    • Plugin System
+  ]
+}
+
+package "Legacy System" as LS #LEGACY {
+  component "Legacy App" as LEGACY [
+    **Legacy Application**
+    Port: 3000
+    ----
+    • Monolithic System
+    • Complete Business Logic
+    • Established Workflows
+    • Proven Stability
+  ]
+}
+
+package "Microservices Domain" as MSD #MICRO {
+  
+  component "Produit Service" as PROD [
+    **Produit Service**
+    Port: 3001
+    ----
+    • Product Catalog
+    • Search & Filters
+    • Categories Management
+    • Price Management
+    • Media Management
+  ]
+  
+  component "Vente Service" as VENTE [
+    **Vente Service**
+    Port: 3004
+    ----
+    • Sales Transactions
+    • Order Management
+    • Shopping Cart
+    • Payment Processing
+    • Sales History
+  ]
+  
+  component "Stock Service" as STOCK [
+    **Stock Service**
+    Port: 3007
+    ----
+    • Real-time Inventory
+    • Stock Movements
+    • Reservations
+    • Multi-store Stock
+    • Alerts & Forecasting
+  ]
+  
+  component "Reporting Service" as REPORT [
+    **Reporting Service**
+    Port: 3008
+    ----
+    • Business Intelligence
+    • Advanced Analytics
+    • Custom Reports
+    • Data Export
+    • KPI Dashboards
+  ]
+}
+
+package "Database Layer" as DBL #DB {
+  
+  database "Legacy DB" as DB_LEGACY [
+    **PostgreSQL Legacy**
+    Port: 5432
+    ----
+    • Main Database
+    • Historical Data
+    • Shared Tables
+    • Migration Base
+  ]
+  
+  database "Produit DB" as DB_PROD [
+    **PostgreSQL Produits**
+    Port: 5433
+    ----
+    • Product Catalog
+    • Categories
+    • Pricing History
+    • Media References
+  ]
+  
+  database "Vente DB" as DB_VENTE [
+    **PostgreSQL Ventes**
+    Port: 5434
+    ----
+    • Transactions
+    • Orders
+    • Customers
+    • Payment History
+  ]
+  
+  database "Stock DB" as DB_STOCK [
+    **PostgreSQL Stock**
+    Port: 5435
+    ----
+    • Inventory Levels
+    • Stock Movements
+    • Reservations
+    • Store Locations
+  ]
+  
+  database "Reporting DB" as DB_REPORT [
+    **PostgreSQL Reporting**
+    Port: 5436
+    ----
+    • Analytics Data
+    • Aggregated Views
+    • Historical Metrics
+    • BI Cache
+  ]
+}
+
+package "Cache & Session" as CS #CACHE {
+  component "Redis Cache" as REDIS [
+    **Redis Cache**
+    Port: 6379
+    ----
+    • Distributed Cache
+    • Session Storage
+    • Real-time Data
+    • Pub/Sub Events
+  ]
+}
+
+package "Monitoring Stack" as MS #GATEWAY {
+  component "Prometheus" as PROM [
+    **Prometheus**
+    Port: 9090
+    ----
+    • Metrics Collection
+    • Time Series DB
+    • Alerting Rules
+    • Service Discovery
+  ]
+  
+  component "Grafana" as GRAF [
+    **Grafana**
+    Port: 3001
+    ----
+    • Dashboards
+    • Visualization
+    • Alerting
+    • Data Sources
+  ]
+}
+
+' Flux utilisateurs
+USERS_POS --> NGINX : "HTTPS:443\nRequêtes POS"
+USERS_MM --> NGINX : "HTTPS:443\nRequêtes Admin"
+USERS_API --> NGINX : "HTTPS:443\nAPI Calls"
+USERS_WEB --> NGINX : "HTTPS:443\nWeb/Mobile"
+
+' Load Balancer vers Router
+NGINX --> HROUTER : "HTTP:9000\nRouted Requests"
+
+' Router vers Gateway
+HROUTER --> KONG : "HTTP:8000\nProcessed Requests"
+
+' Gateway vers Services
+KONG --> LEGACY : "HTTP:3000\nLegacy Calls"
+KONG --> PROD : "HTTP:3001\nProduct API"
+KONG --> VENTE : "HTTP:3004\nSales API"
+KONG --> STOCK : "HTTP:3007\nStock API"
+KONG --> REPORT : "HTTP:3008\nReporting API"
+
+' Services vers Databases
+LEGACY --> DB_LEGACY : "TCP:5432\nSQL Queries"
+PROD --> DB_PROD : "TCP:5433\nProduct Data"
+VENTE --> DB_VENTE : "TCP:5434\nSales Data"
+STOCK --> DB_STOCK : "TCP:5435\nStock Data"
+REPORT --> DB_REPORT : "TCP:5436\nAnalytics Data"
+
+' Cache connections
+PROD --> REDIS : "TCP:6379\nCache Products"
+VENTE --> REDIS : "TCP:6379\nCache Sessions"
+STOCK --> REDIS : "TCP:6379\nCache Inventory"
+REPORT --> REDIS : "TCP:6379\nCache Analytics"
+
+' Monitoring connections
+HROUTER --> PROM : "HTTP:9090\nRouter Metrics"
+KONG --> PROM : "HTTP:9090\nGateway Metrics"
+LEGACY --> PROM : "HTTP:9090\nLegacy Metrics"
+PROD --> PROM : "HTTP:9090\nService Metrics"
+VENTE --> PROM : "HTTP:9090\nService Metrics"
+STOCK --> PROM : "HTTP:9090\nService Metrics"
+REPORT --> PROM : "HTTP:9090\nService Metrics"
+
+PROM --> GRAF : "HTTP:9090\nMetrics Data"
+
+' Data synchronization (bidirectional)
+DB_LEGACY <--> DB_PROD : "Data Sync\nProduct Master"
+DB_LEGACY <--> DB_VENTE : "Data Sync\nSales History"
+DB_LEGACY <--> DB_STOCK : "Data Sync\nInventory"
+DB_LEGACY <--> DB_REPORT : "Data Sync\nReporting"
+
+note top of HROUTER
+  **Routing Logic:**
+  
+  X-Client-Type: pos → Legacy + Stock Service
+  X-Client-Type: maisonmere → Legacy + Reporting Service  
+  X-Client-Type: api → All Microservices
+  X-Client-Type: web → All Microservices
+  
+  **Fallback:** Legacy System if Microservice unavailable
+end note
+
+note bottom of DB_LEGACY
+  **Migration Strategy:**
+  
+  • Gradual data migration
+  • Bidirectional sync
+  • Shared reference data
+  • Eventual consistency
+  • Zero downtime migration
+end note
+
+note right of MS
+  **Monitoring Coverage:**
+  
+  • Service Health
+  • Response Times
+  • Error Rates
+  • Business Metrics
+  • Infrastructure Metrics
+  • Custom Dashboards
+end note
+
+@enduml

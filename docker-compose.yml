@@ -87,6 +87,7 @@ services:
       - DB_NAME=produit_service
       - DB_USER=postgres
       - DB_PASSWORD=password
+      - DB_DIALECT=postgres
       - INSTANCE_ID=1
     ports:
       - "3001:3001"
@@ -106,6 +107,7 @@ services:
       - DB_NAME=produit_service
       - DB_USER=postgres
       - DB_PASSWORD=password
+      - DB_DIALECT=postgres
       - INSTANCE_ID=2
     ports:
       - "3005:3005"
@@ -125,6 +127,7 @@ services:
       - DB_NAME=produit_service
       - DB_USER=postgres
       - DB_PASSWORD=password
+      - DB_DIALECT=postgres
       - INSTANCE_ID=3
     ports:
       - "3006:3006"
@@ -198,51 +201,51 @@ services:
   # ROUTEUR HYBRIDE
   # =======================================
   
-  hybrid-router:
-    build:
-      context: .
-      dockerfile: Dockerfile.hybrid-router
-    container_name: hybrid-router
-    environment:
-      - PORT=9000
-      - LEGACY_SYSTEM_URL=http://legacy-system:3000
-      - PRODUIT_SERVICE_URL=http://produit-service-1:3001
-      - VENTE_SERVICE_URL=http://vente-service:3004
-      - STOCK_SERVICE_URL=http://stock-service:3007
-      - REPORTING_SERVICE_URL=http://reporting-service:3008
-    ports:
-      - "9000:9000"
-    depends_on:
-      - legacy-system
-      - produit-service-1
-      - vente-service
-      - stock-service
-      - reporting-service
-    networks:
-      - app-network
-    restart: unless-stopped
+  # hybrid-router:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.hybrid-router
+  #   container_name: hybrid-router
+  #   environment:
+  #     - PORT=9000
+  #     - LEGACY_SYSTEM_URL=http://legacy-system:3000
+  #     - PRODUIT_SERVICE_URL=http://produit-service-1:3001
+  #     - VENTE_SERVICE_URL=http://vente-service:3004
+  #     - STOCK_SERVICE_URL=http://stock-service:3007
+  #     - REPORTING_SERVICE_URL=http://reporting-service:3008
+  #   ports:
+  #     - "9000:9000"
+  #   depends_on:
+  #     - legacy-system
+  #     - produit-service-1
+  #     - vente-service
+  #     - stock-service
+  #     - reporting-service
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
 
   # =======================================
   # LOAD BALANCER
   # =======================================
 
-  load-balancer:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: load-balancer
-    environment:
-      - PORT=8000
-      - TARGET_SERVICES=http://produit-service-1:3001,http://produit-service-2:3005,http://produit-service-3:3006
-    ports:
-      - "8000:8000"
-    depends_on:
-      - produit-service-1
-      - produit-service-2
-      - produit-service-3
-    networks:
-      - app-network
-    restart: unless-stopped
+  # load-balancer:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: load-balancer
+  #   environment:
+  #     - PORT=8000
+  #     - TARGET_SERVICES=http://produit-service-1:3001,http://produit-service-2:3005,http://produit-service-3:3006
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - produit-service-1
+  #     - produit-service-2
+  #     - produit-service-3
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
 
   # =======================================
   # API GATEWAY
@@ -265,7 +268,8 @@ services:
       - "8001:8000"  # Proxy
       - "8002:8001"  # Admin API
     depends_on:
-      - hybrid-router
+      # - hybrid-router
+      - legacy-system
     networks:
       - app-network
     restart: unless-stopped

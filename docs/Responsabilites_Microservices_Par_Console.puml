@@ -1,0 +1,201 @@
+@startuml Responsabilites_Microservices_Par_Console
+!theme plain
+title Matrice des Responsabilités - Microservices par Console
+
+skinparam backgroundColor #f8f9fa
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+
+!define USED #4CAF50
+!define NOTUSED #FFCDD2
+!define LEGACY #FF9800
+!define SHARED #FFC107
+
+' === STRUCTURE DES CONSOLES ===
+
+package "CONSOLES & CLIENTS" as Consoles {
+  
+  component "Console POS\n📺" as POS {
+    [Vente Directe]
+    [Gestion Stock]
+    [Auth Utilisateur]
+  }
+  
+  component "Console Maison Mère\n🏢" as MM {
+    [Gestion Globale]
+    [Rapports Avancés]
+    [Administration]
+  }
+  
+  component "Applications Modernes\n🚀" as Modern {
+    [Web/Mobile]
+    [API v2]
+    [Intégrations]
+  }
+}
+
+' === MATRICE DES SERVICES ===
+
+package "SYSTÈME DE BASE (LEGACY)" as LegacyBox #FF9800 {
+  component "Legacy System\n:3000" as Legacy {
+    [Magasins]
+    [Utilisateurs]
+    [Sessions]
+    [Ventes Base]
+    [Produits Base]
+  }
+}
+
+package "MICROSERVICES" as MicroBox {
+  
+  package "Produit Service\n:3001,3005,3006" as ProduitBox #USED {
+    component "Produit μService" as Produit {
+      [Catalogue Moderne]
+      [API REST]
+      [PostgreSQL]
+      [Load Balanced]
+    }
+  }
+  
+  package "Vente Service\n:3004" as VenteBox #USED {
+    component "Vente μService" as Vente {
+      [Logic Métier]
+      [Validation]
+      [Intégrations]
+      [Workflows]
+    }
+  }
+  
+  package "Stock Service\n:3007" as StockBox #USED {
+    component "Stock μService" as Stock {
+      [Temps Réel]
+      [Mouvements]
+      [Alertes]
+      [Ajustements]
+    }
+  }
+  
+  package "Reporting Service\n:3008" as ReportingBox #USED {
+    component "Reporting μService" as Reporting {
+      [Analytics]
+      [Agrégation]
+      [KPIs]
+      [Dashboards]
+    }
+  }
+}
+
+' === CONNEXIONS ET RESPONSABILITÉS ===
+
+' POS Console
+POS --> Legacy : "✅ PRINCIPAL\nAuth, Ventes, Produits"
+POS --> Stock : "✅ TEMPS RÉEL\nStock live, Alertes"
+POS -.-> Produit : "❌ Via Legacy"
+POS -.-> Vente : "❌ Via Legacy"
+POS -.-> Reporting : "❌ Non utilisé"
+
+' Maison Mère Console  
+MM --> Legacy : "✅ PRINCIPAL\nGestion, Users, Magasins"
+MM --> Reporting : "✅ ANALYTICS\nRapports avancés"
+MM -.-> Produit : "❌ Via Legacy"
+MM -.-> Vente : "❌ Via Legacy"
+MM -.-> Stock : "❌ Via Legacy"
+
+' Applications Modernes
+Modern --> Produit : "✅ API MODERNE\nCatalogue complet"
+Modern --> Vente : "✅ API MODERNE\nVentes avancées"
+Modern --> Stock : "✅ API MODERNE\nInventaire complet"
+Modern --> Reporting : "✅ API MODERNE\nAnalytics temps réel"
+Modern -.-> Legacy : "❌ Évité"
+
+' === NOTES EXPLICATIVES ===
+
+note top of POS
+  **CONSOLE POS**
+  
+  ✅ **Utilise Legacy pour:**
+  • Authentification vendeur
+  • Création des ventes
+  • Consultation produits de base
+  • Gestion des sessions
+  
+  ✅ **Utilise Stock μService pour:**
+  • Vérification stock temps réel
+  • Ajustements automatiques
+  • Alertes de rupture
+  
+  ❌ **N'utilise pas directement:**
+  • Produit μService (via Legacy)
+  • Vente μService (via Legacy)
+  • Reporting μService
+end note
+
+note top of MM
+  **CONSOLE MAISON MÈRE**
+  
+  ✅ **Utilise Legacy pour:**
+  • Gestion des magasins
+  • Administration utilisateurs
+  • Ventes consolidées
+  • Données historiques
+  
+  ✅ **Utilise Reporting μService pour:**
+  • Rapports analytiques avancés
+  • KPIs en temps réel
+  • Dashboards interactifs
+  • Métriques business
+  
+  ❌ **N'utilise pas directement:**
+  • Produit μService (via Legacy)
+  • Vente μService (via Legacy)
+  • Stock μService (via Legacy)
+end note
+
+note top of Modern
+  **APPLICATIONS MODERNES**
+  
+  ✅ **Utilise tous les μServices:**
+  • Produit μService → Catalogue API
+  • Vente μService → Business logic
+  • Stock μService → Inventaire complet
+  • Reporting μService → Analytics
+  
+  ❌ **Évite Legacy System:**
+  • Architecture découplée
+  • APIs modernes REST
+  • Scaling indépendant
+end note
+
+' === TABLEAU DE RESPONSABILITÉS ===
+
+note bottom
+  **MATRICE DES RESPONSABILITÉS PAR CONSOLE**
+  
+  |= Console |= Legacy System |= Produit μS |= Vente μS |= Stock μS |= Reporting μS |
+  | **📺 POS** | ✅ Principal | ❌ | ❌ | ✅ Temps réel | ❌ |
+  | **🏢 Maison Mère** | ✅ Principal | ❌ | ❌ | ❌ | ✅ Analytics |
+  | **🚀 Apps Modernes** | ❌ | ✅ API | ✅ API | ✅ API | ✅ API |
+  
+  **LÉGENDE:**
+  • ✅ = Utilisation directe
+  • ❌ = Non utilisé directement
+  • Principal = Fonctionnalité principale
+  • API = Accès via API moderne
+  
+  **AVANTAGES DE CETTE ARCHITECTURE:**
+  1. **Compatibilité:** POS/MM continuent avec Legacy
+  2. **Innovation:** Apps modernes utilisent μServices
+  3. **Performance:** Stock temps réel pour POS
+  4. **Analytics:** Reporting avancé pour MM
+  5. **Évolutivité:** Migration progressive possible
+end note
+
+' === FLUX DE DONNÉES ===
+
+Legacy ..> Stock : "Sync stock après vente"
+Stock ..> Reporting : "Données stock pour analytics"
+Legacy ..> Reporting : "Données historiques"
+Vente ..> Stock : "Ajustements stock"
+Vente ..> Produit : "Validation produits"
+
+@enduml

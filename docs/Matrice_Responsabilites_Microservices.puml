@@ -1,0 +1,229 @@
+@startuml Matrice_Responsabilites_Microservices
+!theme cerulean-outline
+title Matrice des Responsabilités - Microservices par Console
+
+' Définition des couleurs
+!define LEGACY #FFE4B5
+!define MICROSERVICE #E0F6FF
+!define HYBRID #F0F8E0
+
+package "Consoles & Responsabilités" {
+
+  rectangle "POS Console" as POS #LEGACY {
+    note as POSNote
+      **Principe: Stabilité maximale**
+      
+      **LEGACY System:**
+      • Gestion produits (lecture)
+      • Transactions de vente
+      • Gestion clients
+      • Facturation
+      • Caisse & paiements
+      • Interface tactile
+      
+      **Stock Service uniquement:**
+      • Vérification stock temps réel
+      • Réservation produits
+      • Alertes rupture
+    end note
+  }
+
+  rectangle "Maison Mère Console" as MM #LEGACY {
+    note as MMNote
+      **Principe: Compatibilité Legacy**
+      
+      **LEGACY System:**
+      • Dashboard principal
+      • Gestion utilisateurs
+      • Configuration système
+      • Paramètres magasins
+      • Synchronisation données
+      • Sauvegarde/restauration
+      
+      **Reporting Service uniquement:**
+      • Rapports avancés BI
+      • Analytics cross-magasins
+      • KPIs temps réel
+      • Prédictions ventes
+      • Tableaux de bord analytics
+    end note
+  }
+
+  rectangle "API Moderne" as API #MICROSERVICE {
+    note as APINote
+      **Principe: Microservices First**
+      
+      **Produit Service:**
+      • CRUD catalogue complet
+      • Recherche avancée
+      • Catégorisation
+      • Pricing dynamique
+      
+      **Vente Service:**
+      • API transactions REST
+      • Historique détaillé
+      • Commandes complexes
+      • Intégrations externes
+      
+      **Stock Service:**
+      • Inventaire temps réel
+      • Mouvements détaillés
+      • Prévisions stock
+      • Optimisation automatique
+      
+      **Reporting Service:**
+      • API analytics complète
+      • Export données
+      • Métriques personnalisées
+      • Intégration BI externe
+    end note
+  }
+
+  rectangle "Web/Mobile" as WEB #MICROSERVICE {
+    note as WEBNote
+      **Principe: Expérience Moderne**
+      
+      **Produit Service:**
+      • Catalogue interactif
+      • Recherche/filtres
+      • Recommandations
+      • Images & médias
+      
+      **Vente Service:**
+      • Panier intelligent
+      • Checkout optimisé
+      • Historique achats
+      • Commandes en ligne
+      
+      **Stock Service:**
+      • Disponibilité live
+      • Réservation click&collect
+      • Notifications stock
+      • Géolocalisation magasins
+      
+      **Reporting Service:**
+      • Dashboards utilisateur
+      • Statistiques personnelles
+      • Rapports self-service
+      • Visualisations modernes
+    end note
+  }
+}
+
+package "Services & Domaines" {
+
+  rectangle "Legacy System" as LEG #LEGACY {
+    component "Gestion Complète" as LEGCOMP {
+      [Produits Legacy]
+      [Ventes Legacy] 
+      [Clients Legacy]
+      [Config Legacy]
+      [Users Legacy]
+      [Sync Legacy]
+    }
+  }
+
+  rectangle "Produit Service" as PROD #MICROSERVICE {
+    component "Domaine Produits" as PRODCOMP {
+      [Catalogue REST API]
+      [Recherche Elasticsearch]
+      [Cache Redis]
+      [Images & Media]
+      [Pricing Engine]
+      [Catégories]
+    }
+  }
+
+  rectangle "Vente Service" as VENTE #MICROSERVICE {
+    component "Domaine Ventes" as VENTECOMP {
+      [Transactions API]
+      [Panier Service]
+      [Commandes Service]
+      [Historique Service]
+      [Payment Gateway]
+      [Event Sourcing]
+    }
+  }
+
+  rectangle "Stock Service" as STOCK #MICROSERVICE {
+    component "Domaine Stock" as STOCKCOMP {
+      [Inventaire Temps Réel]
+      [Mouvements Stock]
+      [Réservations]
+      [Prévisions ML]
+      [Alertes Stock]
+      [Multi-magasins]
+    }
+  }
+
+  rectangle "Reporting Service" as REPORT #MICROSERVICE {
+    component "Domaine Analytics" as REPORTCOMP {
+      [Business Intelligence]
+      [Data Warehouse]
+      [KPIs Temps Réel]
+      [Prédictions AI]
+      [Export/Import]
+      [Dashboards API]
+    }
+  }
+}
+
+' Connexions POS
+POS -down-> LEG : "Toutes fonctions sauf Stock"
+POS -down-> STOCK : "Stock temps réel uniquement"
+
+' Connexions Maison Mère  
+MM -down-> LEG : "Toutes fonctions sauf Reporting"
+MM -down-> REPORT : "Analytics avancés uniquement"
+
+' Connexions API Moderne
+API -down-> PROD : "API Catalogue complète"
+API -down-> VENTE : "API Transactions complète"
+API -down-> STOCK : "API Stock complète"
+API -down-> REPORT : "API Analytics complète"
+
+' Connexions Web/Mobile
+WEB -down-> PROD : "UI Catalogue moderne"
+WEB -down-> VENTE : "UI Vente moderne"
+WEB -down-> STOCK : "UI Stock moderne"
+WEB -down-> REPORT : "UI Reporting moderne"
+
+' Notes explicatives
+note right of POS
+  **Stratégie POS:**
+  
+  Conservation max du Legacy
+  pour éviter disruption
+  
+  Stock Service ajouté pour
+  temps réel indispensable
+end note
+
+note right of MM
+  **Stratégie Maison Mère:**
+  
+  Interface familière Legacy
+  
+  Reporting Service pour
+  analytics business avancés
+end note
+
+note right of API
+  **Stratégie API:**
+  
+  Microservices complets
+  pour flexibilité maximale
+  
+  Fallback Legacy si besoin
+end note
+
+note right of WEB
+  **Stratégie Web/Mobile:**
+  
+  Expérience utilisateur
+  moderne complète
+  
+  Performance & réactivité
+end note
+
+@enduml

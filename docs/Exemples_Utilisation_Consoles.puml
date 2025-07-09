@@ -1,0 +1,146 @@
+@startuml Exemples_Utilisation_Consoles
+!theme cerulean-outline
+title Exemples d'Utilisation - Scénarios Concrets par Console
+
+participant "Caissier POS" as POS
+participant "Manager MM" as MM
+participant "App Externe" as API
+participant "Client Web" as WEB
+participant "Hybrid Router" as ROUTER
+participant "Kong Gateway" as KONG
+participant "Legacy System" as LEGACY
+participant "Stock Service" as STOCK
+participant "Reporting Service" as REPORT
+participant "Produit Service" as PROD
+participant "Vente Service" as VENTE
+
+== Exemple 1: Transaction POS Complète ==
+note over POS : **Scénario:** Vente d'un produit en magasin
+POS -> ROUTER : GET /pos/products/search?q=iPhone\nX-Client-Type: pos
+note over ROUTER : Mode POS → Legacy System
+ROUTER -> KONG : Route vers Legacy
+KONG -> LEGACY : GET /products/search?q=iPhone
+LEGACY --> KONG : [{"id": 123, "name": "iPhone 15", "price": 999}]
+KONG --> ROUTER : Produits trouvés
+ROUTER --> POS : Liste produits POS
+
+POS -> ROUTER : GET /pos/stock/level/123\nX-Client-Type: pos
+note over ROUTER : Stock autorisé pour POS
+ROUTER -> KONG : Route vers Stock Service
+KONG -> STOCK : GET /stock/level/123
+STOCK --> KONG : {"available": 5, "reserved": 1}
+KONG --> ROUTER : Stock disponible
+ROUTER --> POS : 4 unités disponibles
+
+POS -> ROUTER : POST /pos/sale\n{"productId": 123, "quantity": 1}\nX-Client-Type: pos
+note over ROUTER : Vente → Legacy System
+ROUTER -> KONG : Route vers Legacy
+KONG -> LEGACY : POST /sale
+LEGACY --> KONG : {"saleId": 456, "total": 999, "status": "completed"}
+KONG --> ROUTER : Vente confirmée
+ROUTER --> POS : ✓ Transaction réussie
+
+== Exemple 2: Rapport Maison Mère ==
+note over MM : **Scénario:** Génération rapport mensuel
+MM -> ROUTER : GET /maisonmere/dashboard\nX-Client-Type: maisonmere
+note over ROUTER : Mode Maison Mère → Legacy
+ROUTER -> KONG : Route vers Legacy
+KONG -> LEGACY : GET /dashboard
+LEGACY --> KONG : Dashboard standard
+KONG --> ROUTER : Données de base
+ROUTER --> MM : Dashboard classique
+
+MM -> ROUTER : GET /maisonmere/reports/monthly-sales\nX-Client-Type: maisonmere
+note over ROUTER : Rapports avancés → Reporting Service
+ROUTER -> KONG : Route vers Reporting
+KONG -> REPORT : GET /reports/monthly-sales
+REPORT --> KONG : Rapport BI complet avec analyses
+KONG --> ROUTER : Analytics avancés
+ROUTER --> MM : Rapport enrichi avec KPIs
+
+MM -> ROUTER : GET /maisonmere/reports/prediction\nX-Client-Type: maisonmere
+ROUTER -> KONG : Route vers Reporting
+KONG -> REPORT : GET /reports/prediction
+REPORT --> KONG : Prédictions ML
+KONG --> ROUTER : Prédictions IA
+ROUTER --> MM : Prévisions ventes Q4
+
+== Exemple 3: Intégration API Externe ==
+note over API : **Scénario:** ERP externe synchronisant catalogue
+API -> ROUTER : GET /api/v2/products\nAuthorization: Bearer xxx\nX-Client-Type: api
+note over ROUTER : Mode API → Microservices
+ROUTER -> KONG : Route vers Produit Service
+KONG -> PROD : GET /products
+PROD --> KONG : Catalogue complet REST
+KONG --> ROUTER : API standardisée
+ROUTER --> API : JSON moderne
+
+API -> ROUTER : PUT /api/v2/products/123\n{"price": 899}\nX-Client-Type: api
+ROUTER -> KONG : Route vers Produit Service
+KONG -> PROD : PUT /products/123
+PROD --> KONG : Produit mis à jour
+KONG --> ROUTER : Confirmation API
+ROUTER --> API : ✓ Prix mis à jour
+
+API -> ROUTER : GET /api/v2/analytics/sales-trends\nX-Client-Type: api
+ROUTER -> KONG : Route vers Reporting
+KONG -> REPORT : GET /analytics/sales-trends
+REPORT --> KONG : Données analytiques
+KONG --> ROUTER : Métriques API
+ROUTER --> API : Tendances exportées
+
+== Exemple 4: Expérience Web/Mobile ==
+note over WEB : **Scénario:** Client consultant et achetant en ligne
+WEB -> ROUTER : GET /web/catalog?category=smartphones\nX-Client-Type: web
+note over ROUTER : Mode Web → Microservices
+ROUTER -> KONG : Route vers Produit Service
+KONG -> PROD : GET /products?category=smartphones
+PROD --> KONG : Catalogue optimisé web
+KONG --> ROUTER : Format UI moderne
+ROUTER --> WEB : Interface moderne
+
+WEB -> ROUTER : GET /web/stock/availability/123?store=1\nX-Client-Type: web
+ROUTER -> KONG : Route vers Stock Service
+KONG -> STOCK : GET /availability/123?store=1
+STOCK --> KONG : Disponibilité magasin
+KONG --> ROUTER : Stock temps réel
+ROUTER --> WEB : Affichage dynamique
+
+WEB -> ROUTER : POST /web/cart/add\n{"productId": 123, "quantity": 1}\nX-Client-Type: web
+ROUTER -> KONG : Route vers Vente Service
+KONG -> VENTE : POST /cart/add
+VENTE --> KONG : Panier mis à jour
+KONG --> ROUTER : Confirmation panier
+ROUTER --> WEB : UI reactive
+
+WEB -> ROUTER : POST /web/orders/checkout\nX-Client-Type: web
+ROUTER -> KONG : Route vers Vente Service
+KONG -> VENTE : POST /orders/checkout
+VENTE --> KONG : Commande créée
+KONG --> ROUTER : Commande confirmée
+ROUTER --> WEB : ✓ Achat terminé
+
+== Exemple 5: Fallback Automatique ==
+note over API : **Scénario:** Microservice indisponible
+API -> ROUTER : GET /api/v2/products\nX-Client-Type: api
+ROUTER -> KONG : Tentative Produit Service
+KONG -> PROD : ❌ Service DOWN
+KONG --> ROUTER : Erreur 503
+note over ROUTER : Fallback automatique
+ROUTER -> KONG : Route vers Legacy
+KONG -> LEGACY : GET /products
+LEGACY --> KONG : Données legacy
+KONG --> ROUTER : Fallback réussi
+ROUTER --> API : ⚠️ Données via fallback
+
+note right of ROUTER
+  **Avantages Architecture Hybride:**
+  
+  ✓ **POS:** Stabilité maximale + stock temps réel
+  ✓ **Maison Mère:** Interface familière + analytics BI
+  ✓ **API:** Flexibilité complète + fallback
+  ✓ **Web/Mobile:** Expérience moderne complète
+  ✓ **Migration:** Progressive et sans interruption
+end note
+
+@enduml

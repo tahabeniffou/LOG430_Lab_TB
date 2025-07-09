@@ -1,0 +1,189 @@
+@startuml Sequence_Flow_Consoles_Detaille
+!theme plain
+title Séquences d'Interaction - Consoles POS et Maison Mère
+
+skinparam backgroundColor #f8f9fa
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+
+participant "Console POS" as POS #FFEB3B
+participant "Kong Gateway" as Kong #2196F3
+participant "Hybrid Router" as Router #9C27B0
+participant "Legacy System" as Legacy #FF9800
+participant "Stock μService" as Stock #4CAF50
+participant "MySQL DB" as MySQL #F44336
+participant "Redis Cache" as Redis #795548
+
+== SÉQUENCE 1: AUTHENTIFICATION POS ==
+
+POS -> Kong: **POST /pos/auth**\nX-Client-Type: pos\n{username, password, magasin_id}
+Kong -> Router: Forward request with headers
+Router -> Legacy: **POST /api/v1/auth**\n(Route: POS → Legacy)
+
+note over Legacy
+  **Legacy gère:**
+  - Validation utilisateur
+  - Création session
+  - Vérification magasin
+end note
+
+Legacy -> MySQL: SELECT utilisateurs, sessions
+MySQL --> Legacy: User data + permissions
+Legacy -> Redis: SET session_id = user_data
+Legacy --> Router: **{token, user_info, permissions}**
+Router --> Kong: Forward response
+Kong --> POS: **✅ Auth Success + Session Token**
+
+== SÉQUENCE 2: CONSULTATION PRODUITS (POS) ==
+
+POS -> Kong: **GET /pos/produits**\nAuthorization: Bearer token
+Kong -> Router: Route analysis
+Router -> Legacy: **GET /api/v1/produits**\n(Route: POS → Legacy)
+
+note over Legacy
+  **Legacy gère:**
+  - Catalogue produits
+  - Prix par magasin
+  - Disponibilité générale
+end note
+
+Legacy -> MySQL: SELECT produits, prix
+MySQL --> Legacy: Product catalog
+Legacy --> Router: **{produits: [...]}**
+Router --> Kong: Forward response
+Kong --> POS: **📦 Liste des produits**
+
+== SÉQUENCE 3: VÉRIFICATION STOCK TEMPS RÉEL (POS) ==
+
+POS -> Kong: **GET /pos/stock/produit/123**\nCheck real-time stock
+Kong -> Router: Route analysis
+Router -> Stock: **GET /stocks/produit/123**\n(Route: POS → Stock μService)
+
+note over Stock
+  **Stock μService gère:**
+  - Stock temps réel
+  - Seuils d'alerte
+  - Mouvements récents
+end note
+
+Stock -> MySQL: SELECT stocks, mouvements_stock
+MySQL --> Stock: Current stock level
+Stock --> Router: **{quantite: 45, seuil_min: 10, status: "OK"}**
+Router --> Kong: Forward response
+Kong --> POS: **📊 Stock en temps réel**
+
+== SÉQUENCE 4: CRÉATION VENTE (POS) ==
+
+POS -> Kong: **POST /pos/ventes**\n{produit_id, quantite, prix}
+Kong -> Router: Route analysis
+Router -> Legacy: **POST /api/v1/ventes**\n(Route: POS → Legacy)
+
+note over Legacy
+  **Legacy gère:**
+  - Création vente
+  - Validation business
+  - Calculs totaux
+end note
+
+Legacy -> MySQL: INSERT INTO ventes, vente_details
+Legacy -> Stock: **PUT /stocks/produit/123/ajuster**\n{quantiteAjustement: -2}
+
+note over Stock
+  **Mise à jour stock:**
+  - Soustraction quantité
+  - Vérification seuils
+  - Log mouvement
+end note
+
+Stock -> MySQL: UPDATE stocks, INSERT mouvements_stock
+Stock --> Legacy: **{nouveau_stock: 43, alerts: ["STOCK_FAIBLE"]}**
+Legacy -> MySQL: UPDATE ventes SET statut = "validee"
+Legacy --> Router: **{vente_id, total, stock_status}**
+Router --> Kong: Forward response
+Kong --> POS: **✅ Vente créée + Alerte stock**
+
+== SÉQUENCE 5: CONSULTATION MAGASINS (MAISON MÈRE) ==
+
+participant "Console Maison Mère" as MM #E91E63
+
+MM -> Kong: **GET /maisonmere/magasins**\nX-Client-Type: maisonmere
+Kong -> Router: Route analysis
+Router -> Legacy: **GET /api/v1/magasins**\n(Route: Maison Mère → Legacy)
+
+note over Legacy
+  **Legacy gère:**
+  - Liste des magasins
+  - Informations détaillées
+  - Gestionnaires
+end note
+
+Legacy -> MySQL: SELECT magasins, utilisateurs
+MySQL --> Legacy: Store data with managers
+Legacy --> Router: **{magasins: [...], gestionnaires: [...]}**
+Router --> Kong: Forward response
+Kong --> MM: **🏢 Liste des magasins**
+
+== SÉQUENCE 6: RAPPORTS AVANCÉS (MAISON MÈRE) ==
+
+MM -> Kong: **GET /maisonmere/reports/sales?periode=mois**\nAdvanced analytics request
+Kong -> Router: Route analysis
+Router -> ReportingMS: **GET /api/reports/sales?periode=mois**\n(Route: Maison Mère → Reporting μService)
+
+participant "Reporting μService" as Reporting #8BC34A
+
+note over Reporting
+  **Reporting μService gère:**
+  - Analytics avancées
+  - Agrégation multi-sources
+  - Cache intelligent
+end note
+
+Reporting -> Redis: GET report_cache_key
+Redis --> Reporting: Cache miss
+Reporting -> MySQL: Complex aggregation queries\n(ventes, magasins, utilisateurs)
+Reporting -> Legacy: **GET /api/v1/ventes-consolidees**\nGet additional legacy data
+Legacy -> MySQL: SELECT legacy sales data
+Legacy --> Reporting: Legacy sales data
+Reporting -> MySQL: Combine with microservice data
+MySQL --> Reporting: Aggregated results
+Reporting -> Redis: SET report_cache = results (TTL: 1h)
+Reporting --> Router: **{analytics: {...}, kpis: {...}, charts: {...}}**
+Router --> Kong: Forward response
+Kong --> MM: **📊 Rapport analytique avancé**
+
+== SÉQUENCE 7: API MODERNE V2 (WEB APP) ==
+
+participant "Web App" as Web #00BCD4
+
+Web -> Kong: **GET /api/v2/produits**\nModern API request
+Kong -> Router: Route analysis
+Router -> Produit1: **GET /produits**\n(Route: API v2 → Produit μService)
+
+participant "Produit μService" as Produit #4CAF50
+participant "PostgreSQL" as Postgres #673AB7
+
+note over Produit
+  **Produit μService gère:**
+  - API REST moderne
+  - Base dédiée PostgreSQL
+  - Load balancing
+end note
+
+Produit -> Postgres: SELECT FROM produits
+Postgres --> Produit: Product data
+Produit --> Router: **{produits: [...]}** (JSON moderne)
+Router --> Kong: Forward response
+Kong --> Web: **🚀 API moderne response**
+
+== MONITORING & METRICS ==
+
+note over Kong, Redis
+  **Monitoring continu:**
+  - Tous les services → Prometheus
+  - Métriques en temps réel
+  - Dashboards Grafana
+  - Alertes automatiques
+end note
+
+@enduml

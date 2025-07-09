@@ -1,0 +1,145 @@
+@startuml Flux_Routage_Par_Console_Detaille
+!theme cerulean-outline
+title Flux de Routage Détaillé par Console - Architecture Hybride
+
+participant "POS Console" as POS
+participant "Maison Mère" as MM  
+participant "API Moderne" as API
+participant "Web/Mobile" as WEB
+participant "Hybrid Router" as ROUTER
+participant "Kong Gateway" as KONG
+participant "Legacy System" as LEGACY
+participant "Produit Service" as PROD
+participant "Vente Service" as VENTE
+participant "Stock Service" as STOCK
+participant "Reporting Service" as REPORT
+
+== Scénario POS Console ==
+note over POS : **Console Point de Vente**\nGestion transactions quotidiennes
+POS -> ROUTER : GET /pos/products\nX-Client-Type: pos
+activate ROUTER
+note over ROUTER : Mode POS détecté\nPrincipalement Legacy\nStock Service autorisé
+ROUTER -> KONG : Route vers Legacy
+KONG -> LEGACY : GET /products
+LEGACY --> KONG : Liste produits
+KONG --> ROUTER : Réponse
+ROUTER --> POS : Produits avec prix POS
+deactivate ROUTER
+
+POS -> ROUTER : GET /pos/stock/level/123\nX-Client-Type: pos
+activate ROUTER
+note over ROUTER : Stock autorisé pour POS\nTemps réel nécessaire
+ROUTER -> KONG : Route vers Stock Service
+KONG -> STOCK : GET /stock/level/123
+STOCK --> KONG : Niveau stock temps réel
+KONG --> ROUTER : Stock actuel
+ROUTER --> POS : Niveau disponible
+deactivate ROUTER
+
+POS -> ROUTER : POST /pos/sale\nX-Client-Type: pos
+activate ROUTER
+note over ROUTER : Vente = Legacy pour POS\nCompatibilité totale
+ROUTER -> KONG : Route vers Legacy
+KONG -> LEGACY : POST /sale
+LEGACY --> KONG : Transaction créée
+KONG --> ROUTER : Confirmation
+ROUTER --> POS : Vente confirmée
+deactivate ROUTER
+
+== Scénario Maison Mère ==
+note over MM : **Console Administration**\nRapports et surveillance
+MM -> ROUTER : GET /maisonmere/dashboard\nX-Client-Type: maisonmere
+activate ROUTER
+note over ROUTER : Mode Maison Mère\nPrincipalement Legacy\nReporting autorisé
+ROUTER -> KONG : Route vers Legacy
+KONG -> LEGACY : GET /dashboard
+LEGACY --> KONG : Dashboard standard
+KONG --> ROUTER : Données base
+ROUTER --> MM : Dashboard classique
+deactivate ROUTER
+
+MM -> ROUTER : GET /maisonmere/reports/advanced\nX-Client-Type: maisonmere
+activate ROUTER
+note over ROUTER : Rapports avancés\nRouting vers Reporting Service
+ROUTER -> KONG : Route vers Reporting
+KONG -> REPORT : GET /reports/advanced
+REPORT --> KONG : Analytics BI
+KONG --> ROUTER : Rapports enrichis
+ROUTER --> MM : Business Intelligence
+deactivate ROUTER
+
+== Scénario API Moderne ==
+note over API : **Intégrations Externes**\nApplications tierces
+API -> ROUTER : GET /api/v2/products\nX-Client-Type: api
+activate ROUTER
+note over ROUTER : Mode API Moderne\nTous microservices autorisés
+ROUTER -> KONG : Route vers Produit Service
+KONG -> PROD : GET /products
+PROD --> KONG : Catalogue moderne
+KONG --> ROUTER : API REST
+ROUTER --> API : Format JSON standard
+deactivate ROUTER
+
+API -> ROUTER : POST /api/v2/sales\nX-Client-Type: api
+activate ROUTER
+ROUTER -> KONG : Route vers Vente Service
+KONG -> VENTE : POST /sales
+VENTE --> KONG : Transaction microservice
+KONG --> ROUTER : Réponse REST
+ROUTER --> API : Vente API format
+deactivate ROUTER
+
+API -> ROUTER : GET /api/v2/analytics\nX-Client-Type: api
+activate ROUTER
+ROUTER -> KONG : Route vers Reporting
+KONG -> REPORT : GET /analytics
+REPORT --> KONG : Données analytiques
+KONG --> ROUTER : Métriques
+ROUTER --> API : Analytics API
+deactivate ROUTER
+
+== Scénario Web/Mobile ==
+note over WEB : **Interface Utilisateur**\nExpérience moderne
+WEB -> ROUTER : GET /web/catalog\nX-Client-Type: web
+activate ROUTER
+note over ROUTER : Mode Web/Mobile\nTous microservices
+ROUTER -> KONG : Route vers Produit Service
+KONG -> PROD : GET /products
+PROD --> KONG : Catalogue optimisé
+KONG --> ROUTER : Format web
+ROUTER --> WEB : UI moderne
+deactivate ROUTER
+
+WEB -> ROUTER : POST /web/cart/add\nX-Client-Type: web
+activate ROUTER
+ROUTER -> KONG : Route vers Vente Service
+KONG -> VENTE : POST /cart/add
+VENTE --> KONG : Panier mis à jour
+KONG --> ROUTER : Confirmation
+ROUTER --> WEB : UI reactive
+deactivate ROUTER
+
+WEB -> ROUTER : GET /web/stock/availability\nX-Client-Type: web
+activate ROUTER
+ROUTER -> KONG : Route vers Stock Service
+KONG -> STOCK : GET /availability
+STOCK --> KONG : Disponibilité temps réel
+KONG --> ROUTER : Stock live
+ROUTER --> WEB : Affichage dynamique
+deactivate ROUTER
+
+== Fallback Legacy ==
+note over ROUTER : **Fallback automatique**\nSi microservice indisponible
+API -> ROUTER : GET /api/v2/products\n(Produit Service DOWN)
+activate ROUTER
+ROUTER -> KONG : Tentative Produit Service
+KONG -> PROD : ❌ Service indisponible
+note over ROUTER : Fallback vers Legacy
+ROUTER -> KONG : Route vers Legacy
+KONG -> LEGACY : GET /products
+LEGACY --> KONG : Données legacy
+KONG --> ROUTER : Réponse de secours
+ROUTER --> API : Fallback réussi
+deactivate ROUTER
+
+@enduml
