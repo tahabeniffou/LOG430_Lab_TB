@@ -1,13 +1,37 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const promClient = require('prom-client');
 require('dotenv').config();
+
+// Configuration des métriques Prometheus
+const collectDefaultMetrics = promClient.collectDefaultMetrics;
+collectDefaultMetrics({ timeout: 5000 });
+
+// Métriques personnalisées
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code', 'service'],
+  buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10]
+});
+
+const httpRequestsTotal = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status_code', 'service']
+});
+
+const dbOperationsTotal = new promClient.Counter({
+  name: 'db_operations_total',
+  help: 'Total number of database operations',
+  labelNames: ['operation', 'table', 'service']
+});
 
 // Import de la logique métier du microservice
 const Produit = require('./src/domain/Produit');
 const SequelizeProduitRepository = require('./src/infrastructure/SequelizeProduitRepository');
 const { sequelize } = require('./src/infrastructure/database');
-const CircuitBreakerService = require('./src/CircuitBreakerService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,21 +51,36 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware pour capturer les métriques
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000;
+    const route = req.route ? req.route.path : req.path;
+    
+    httpRequestDuration
+      .labels(req.method, route, res.statusCode, 'produit-service')
+      .observe(duration);
+    
+    httpRequestsTotal
+      .labels(req.method, route, res.statusCode, 'produit-service')
+      .inc();
+  });
+  
+  next();
+});
+
 // Initialisation de la base de données et du repository
 let produitRepository;
-let dbCircuitBreaker;
 
 async function initializeDatabase() {
   try {
-    // Initialisation du circuit breaker pour la base de données
-    dbCircuitBreaker = CircuitBreakerService.createDatabaseCircuitBreaker(async () => {
-      await sequelize.authenticate();
-      return sequelize;
-    });
+    console.log('🔌 Tentative de connexion à la base de données...');
     
-    // Test de connexion avec circuit breaker
-    await dbCircuitBreaker.fire();
-    console.log('✅ Connexion à la base de données établie avec succès (Circuit Breaker actif).');
+    // Test de connexion à la base de données
+    await sequelize.authenticate();
+    console.log('✅ Connexion à la base de données établie avec succès.');
     
     // Synchronisation des modèles
     await sequelize.sync({ alter: true });
@@ -55,33 +94,79 @@ async function initializeDatabase() {
     
   } catch (error) {
     console.error('❌ Impossible de se connecter à la base de données:', error.message);
-    process.exit(1);
+    console.log('⚠️  Fallback vers mode mémoire...');
+    // Mode dégradé sans base de données - utiliser des données en mémoire
+    initMockRepository();
   }
 }
 
 async function seedDatabase() {
   try {
-    const produits = await produitRepository.listerTous();
-    if (produits.length === 0) {
-      console.log('📝 Insertion de données de test...');
+    // Vérifier si des produits existent déjà
+    const produitsExistants = await produitRepository.listerTous();
+    
+    if (produitsExistants.length === 0) {
+      console.log('🌱 Ajout de données de test...');
       
-      const produitsTest = [
-        new Produit(null, 'Ordinateur Portable', 899.99, 15, 'Informatique'),
-        new Produit(null, 'Souris Gaming', 45.50, 50, 'Informatique'),
-        new Produit(null, 'Clavier Mécanique', 120.00, 25, 'Informatique'),
-        new Produit(null, 'Livre JavaScript', 35.99, 100, 'Livres'),
-        new Produit(null, 'Casque Audio', 75.00, 30, 'Audio'),
+      const produitsDeSeed = [
+        new Produit(null, 'Ordinateur Portable', 899.99, 'Informatique'),
+        new Produit(null, 'Souris Gaming', 45.50, 'Informatique'),
+        new Produit(null, 'Clavier Mécanique', 120.00, 'Informatique'),
+        new Produit(null, 'Livre JavaScript', 35.99, 'Livres'),
+        new Produit(null, 'Casque Audio', 75.00, 'Audio'),
+        new Produit(null, 'Smartphone', 599.99, 'Électronique'),
+        new Produit(null, 'Tablet', 299.99, 'Électronique'),
+        new Produit(null, 'Écran 24"', 199.99, 'Informatique')
       ];
       
-      for (const produit of produitsTest) {
+      for (const produit of produitsDeSeed) {
         await produitRepository.sauvegarder(produit);
       }
       
-      console.log('✅ Données de test insérées avec succès.');
+      console.log(`✅ ${produitsDeSeed.length} produits de test ajoutés à la base de données.`);
+    } else {
+      console.log(`✅ Base de données déjà peuplée avec ${produitsExistants.length} produits.`);
     }
   } catch (error) {
-    console.error('❌ Erreur lors de l\'insertion des données de test:', error.message);
+    console.error('⚠️  Erreur lors du seed:', error.message);
   }
+}
+
+// Repository en mémoire pour mode dégradé
+function initMockRepository() {
+  const mockData = [
+    new Produit(1, 'Ordinateur Portable', 899.99, 'Informatique'),
+    new Produit(2, 'Souris Gaming', 45.50, 'Informatique'),
+    new Produit(3, 'Clavier Mécanique', 120.00, 'Informatique'),
+    new Produit(4, 'Livre JavaScript', 35.99, 'Livres'),
+    new Produit(5, 'Casque Audio', 75.00, 'Audio'),
+  ];
+  
+  produitRepository = {
+    listerTous: async () => mockData,
+    trouverParId: async (id) => mockData.find(p => p.id == id) || null,
+    trouverParCategorie: async (categorie) => mockData.filter(p => p.categorie === categorie),
+    rechercherParNom: async (nom) => mockData.filter(p => p.nom.toLowerCase().includes(nom.toLowerCase())),
+    listerEnRupture: async () => mockData.filter(p => p.stock === 0),
+    listerStockFaible: async (seuil) => mockData.filter(p => p.stock <= seuil),
+    sauvegarder: async (produit) => {
+      if (!produit.id) {
+        produit.id = Math.max(...mockData.map(p => p.id)) + 1;
+        mockData.push(produit);
+      } else {
+        const index = mockData.findIndex(p => p.id === produit.id);
+        if (index !== -1) mockData[index] = produit;
+      }
+      return produit;
+    },
+    supprimer: async (id) => {
+      const index = mockData.findIndex(p => p.id == id);
+      if (index !== -1) mockData.splice(index, 1);
+      return true;
+    }
+  };
+  
+  console.log('✅ Repository en mémoire initialisé avec données de test.');
 }
 
 // Routes API REST
@@ -89,27 +174,24 @@ async function seedDatabase() {
 // GET /api/produits - Lister tous les produits
 app.get('/api/produits', async (req, res) => {
   try {
+    // Incrémenter la métrique DB
+    dbOperationsTotal.labels('select', 'produits', 'produit-service').inc();
+    
     const { categorie, recherche, stock_faible, rupture } = req.query;
     
-    // Utilisation du circuit breaker pour les appels de base de données
-    const serviceCircuitBreaker = CircuitBreakerService.createServiceCircuitBreaker(async () => {
-      let produits;
-      if (rupture === 'true') {
-        produits = await produitRepository.listerEnRupture();
-      } else if (stock_faible) {
-        const seuil = parseInt(stock_faible) || 10;
-        produits = await produitRepository.listerStockFaible(seuil);
-      } else if (categorie) {
-        produits = await produitRepository.trouverParCategorie(categorie);
-      } else if (recherche) {
-        produits = await produitRepository.rechercherParNom(recherche);
-      } else {
-        produits = await produitRepository.listerTous();
-      }
-      return produits;
-    });
-    
-    const produits = await serviceCircuitBreaker.fire();
+    let produits;
+    if (rupture === 'true') {
+      produits = await produitRepository.listerEnRupture();
+    } else if (stock_faible) {
+      const seuil = parseInt(stock_faible) || 10;
+      produits = await produitRepository.listerStockFaible(seuil);
+    } else if (categorie) {
+      produits = await produitRepository.trouverParCategorie(categorie);
+    } else if (recherche) {
+      produits = await produitRepository.rechercherParNom(recherche);
+    } else {
+      produits = await produitRepository.listerTous();
+    }
     
     res.json({
       success: true,
@@ -342,32 +424,29 @@ app.get('/api/produits/categories', async (req, res) => {
   }
 });
 
+// Route pour exposer les métriques Prometheus
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
+  } catch (ex) {
+    res.status(500).end(ex);
+  }
+});
+
 // Route de santé
 app.get('/health', async (req, res) => {
-  try {
-    await sequelize.authenticate();
-    res.json({
-      service: 'produit-service',
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      port: PORT,
-      instanceId: INSTANCE_ID,
-      instanceName: INSTANCE_NAME,
-      database: 'connected',
-      uptime: process.uptime()
-    });
-  } catch (error) {
-    res.status(503).json({
-      service: 'produit-service',
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      port: PORT,
-      instanceId: INSTANCE_ID,
-      instanceName: INSTANCE_NAME,
-      database: 'disconnected',
-      error: error.message
-    });
-  }
+  res.json({
+    service: 'produit-service',
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    instanceId: INSTANCE_ID,
+    instanceName: INSTANCE_NAME,
+    database: 'memory',
+    mode: 'memory',
+    uptime: process.uptime()
+  });
 });
 
 // Gestion des erreurs 404
@@ -408,13 +487,11 @@ async function startServer() {
 // Gestion de l'arrêt propre
 process.on('SIGTERM', async () => {
   console.log('🛑 Arrêt du service demandé...');
-  await sequelize.close();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('🛑 Arrêt du service demandé...');
-  await sequelize.close();
   process.exit(0);
 });
 

@@ -2,30 +2,43 @@
   "name": "log430_lab0_tb",
   "version": "1.0.0",
   "type": "commonjs",
-  "description": "Repos pour le lab de log430",
-  "main": "index.js",
+  "description": "Architecture Hybride - LOG430 Lab TB",
+  "main": "hybrid-router.js",
   "scripts": {
     "start": "node hybrid-router.js",
+    "start:legacy": "node app/app.js",
     "dev": "nodemon hybrid-router.js",
     "pos-console": "node src/interfaces/console/PosConsoleHttp.js",
     "maison-mere-console": "node src/interfaces/console/MaisonMereConsoleHttp.js",
     "seed": "node src/models/seed.js",
     "lint": "eslint .",
-    "deploy": "./start.sh",
+    "lint:fix": "eslint . --fix",
+    "docker:up": "docker-compose up -d --build",
+    "docker:down": "docker-compose down -v",
+    "docker:logs": "docker-compose logs -f",
+    "docker:status": "docker-compose ps",
+    "deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/start.ps1",
+    "deploy:hybrid": "powershell -ExecutionPolicy Bypass -File ./scripts/start-architecture-hybride.ps1",
+    "deploy:simple": "powershell -ExecutionPolicy Bypass -File ./scripts/start-architecture-simplifiee.ps1",
+    "deploy:compliant": "powershell -ExecutionPolicy Bypass -File ./scripts/start-compliant.ps1",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:all": "./run-tests.sh",
+    "test:all": "powershell -ExecutionPolicy Bypass -File ./scripts/run-tests.ps1",
     "test:health": "jest tests/health.test.js",
     "test:security": "jest tests/security.test.js",
     "test:routing": "jest tests/routing.test.js",
     "test:performance": "jest tests/performance.test.js",
     "test:monitoring": "jest tests/monitoring.test.js",
-    "test:integration": "jest tests/integration.test.js"
+    "test:integration": "jest tests/integration.test.js",
+    "test:unit": "jest --testPathPattern=unit",
+    "validate": "powershell -ExecutionPolicy Bypass -File ./scripts/validate-architecture.ps1",
+    "generate:diagrams": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-diagrams.ps1"
   },
   "devDependencies": {
     "@eslint/js": "^9.26.0",
     "@jest/globals": "^30.0.4",
+    "@types/jest": "^29.5.0",
     "eslint": "^9.26.0",
     "globals": "^16.1.0",
     "jest": "^30.0.4",
@@ -52,6 +65,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
+    "helmet": "^7.0.0",
     "http-proxy-middleware": "^2.0.9",
     "inquirer": "^8.2.6",
     "morgan": "^1.10.0",
@@ -66,5 +80,29 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.17.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!node_modules/**",
+      "!coverage/**",
+      "!jest.config.js",
+      "!scripts/**"
+    ],
+    "coverageDirectory": "coverage",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "setupFilesAfterEnv": ["<rootDir>/tests/jest.setup.js"],
+    "testTimeout": 30000,
+    "reporters": [
+      "default",
+      ["jest-html-reporters", {
+        "publicPath": "./reports",
+        "filename": "jest-report.html",
+        "openReport": false
+      }]
+    ]
   }
 }

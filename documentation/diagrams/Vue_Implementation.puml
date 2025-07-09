@@ -1,0 +1,111 @@
+@startuml Vue_Implementation
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Vue d'Implémentation - Organisation des Modules
+
+package "Microservices Architecture" {
+  
+  package "Service Produit" {
+    component "ProductController" as pc
+    component "ProductService" as ps
+    component "ProductRepository" as pr
+    component "ProductModel" as pm
+    database "DB_Produit" as db_p
+    
+    pc --> ps
+    ps --> pr
+    pr --> pm
+    pm --> db_p
+  }
+  
+  package "Service Vente" {
+    component "VenteController" as vc
+    component "VenteService" as vs
+    component "VenteRepository" as vr
+    component "CommandeModel" as cm
+    database "DB_Vente" as db_v
+    
+    vc --> vs
+    vs --> vr
+    vr --> cm
+    cm --> db_v
+  }
+  
+  package "Service Stock" {
+    component "StockController" as sc
+    component "StockService" as ss
+    component "StockRepository" as sr
+    component "InventaireModel" as im
+    database "DB_Stock" as db_s
+    
+    sc --> ss
+    ss --> sr
+    sr --> im
+    im --> db_s
+  }
+  
+  package "Service Reporting" {
+    component "ReportController" as rc
+    component "ReportService" as rs
+    component "DataAggregator" as da
+    component "MetricsCollector" as mc
+    
+    rc --> rs
+    rs --> da
+    rs --> mc
+  }
+  
+  package "API Gateway" {
+    component "Kong Gateway" as kong
+    component "Rate Limiter" as rl
+    component "Auth Plugin" as auth
+    component "Router" as router
+    
+    kong --> rl
+    kong --> auth
+    kong --> router
+  }
+  
+  package "Legacy System" {
+    component "LegacyController" as lc
+    component "LegacyService" as ls
+    component "DataSync" as ds
+    database "DB_Legacy" as db_l
+    
+    lc --> ls
+    ls --> ds
+    ds --> db_l
+  }
+}
+
+package "Infrastructure" {
+  component "Docker Engine" as docker
+  component "Prometheus" as prom
+  component "Grafana" as graf
+  component "Node Exporter" as node_exp
+}
+
+' Relations inter-services
+kong --> pc : /api/produits
+kong --> vc : /api/ventes
+kong --> sc : /api/stock
+kong --> rc : /api/reports
+kong --> lc : /api/legacy
+
+vs --> ps : "consultation produits"
+vs --> ss : "vérification stock"
+rs --> ps : "données produits"
+rs --> vs : "données ventes"
+rs --> ss : "données stock"
+
+ds --> ps : "sync produits"
+ds --> ss : "sync stock"
+
+' Monitoring
+prom --> pc : metrics
+prom --> vc : metrics
+prom --> sc : metrics
+prom --> rc : metrics
+graf --> prom : query
+
+@enduml

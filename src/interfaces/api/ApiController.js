@@ -1,4 +1,9 @@
 // Contrôleur unifié pour l'API - Architecture DDD
+// ⚠️  DOMAINES MIGRES VERS MICROSERVICES :
+// - Produits/Stock -> produit-service (port 3001)
+// - Ventes -> vente-service (port 3004)
+// - Rapports -> reporting-service (port 3005)
+
 const ApplicationService = require('../../application/ApplicationService');
 const db = require('../../models');
 
@@ -7,129 +12,87 @@ class ApiController {
     this.applicationService = new ApplicationService(db);
   }
 
-  // Produits
+  // === MÉTHODES DÉSACTIVÉES - DOMAINES MIGRES ===
+  
+  // Produits -> MIGRÉ vers produit-service
   async listerProduits(req, res, next) {
-    try {
-      const { categorie, nom } = req.query;
-      const produits = await this.applicationService.listerProduits({ categorie, nom });
-      res.json(produits);
-    } catch (error) {
-      next(error);
-    }
+    return res.status(410).json({
+      error: 'LEGACY_DEACTIVATED',
+      message: 'Fonctionnalité migrée vers produit-service',
+      microservice: 'http://localhost:3001/api/produits',
+      redirect_via: 'http://localhost:8000/api/v1/produits (Load Balancer)'
+    });
   }
 
   async obtenirProduit(req, res, next) {
-    try {
-      const produit = await this.applicationService.obtenirProduit(req.params.id);
-      if (!produit) {
-        return res.status(404).json({ message: 'Produit non trouvé' });
-      }
-      res.json(produit);
-    } catch (error) {
-      next(error);
-    }
+    return res.status(410).json({
+      error: 'LEGACY_DEACTIVATED',
+      message: 'Fonctionnalité migrée vers produit-service',
+      microservice: `http://localhost:3001/api/produits/${req.params.id}`,
+      redirect_via: `http://localhost:8000/api/v1/produits/${req.params.id} (Load Balancer)`
+    });
+  }
+
+  async obtenirStock(req, res, next) {
+    return res.status(410).json({
+      error: 'LEGACY_DEACTIVATED',
+      message: 'Fonctionnalité migrée vers stock-service via produit-service',
+      microservice: `http://localhost:3001/api/produits/${req.params.produitId}/stock`,
+      redirect_via: `http://localhost:8000/api/v1/produits/${req.params.produitId}/stock (Load Balancer)`
+    });
+  }
+
+  // Ventes -> MIGRÉ vers vente-service
+  async listerVentes(req, res, next) {
+    const query = req.query.magasinId ? `?magasinId=${req.query.magasinId}` : '';
+    return res.status(410).json({
+      error: 'LEGACY_DEACTIVATED',
+      message: 'Fonctionnalité migrée vers vente-service',
+      microservice: `http://localhost:3004/api/ventes${query}`,
+      redirect_via: `http://localhost:8000/api/v1/ventes${query} (Load Balancer)`
+    });
   }
 
   async obtenirVente(req, res, next) {
-    try {
-      const vente = await this.applicationService.consulterVente(req.params.id);
-      if (!vente) {
-        return res.status(404).json({ message: 'Vente non trouvée' });
-      }
-      res.json(vente);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // Ventes
-  async listerVentes(req, res, next) {
-    try {
-      const { magasinId } = req.query;
-      const ventes = await this.applicationService.consulterVentes(magasinId);
-      res.json(ventes);
-    } catch (error) {
-      next(error);
-    }
+    return res.status(410).json({
+      error: 'LEGACY_DEACTIVATED',
+      message: 'Fonctionnalité migrée vers vente-service',
+      microservice: `http://localhost:3004/api/ventes/${req.params.id}`,
+      redirect_via: `http://localhost:8000/api/v1/ventes/${req.params.id} (Load Balancer)`
+    });
   }
 
   async creerVente(req, res, next) {
-    try {
-      const vente = await this.applicationService.creerVente(req.body);
-      res.status(201).json(vente);
-    } catch (error) {
-      next(error);
-    }
+    return res.status(410).json({
+      error: 'LEGACY_DEACTIVATED',
+      message: 'Fonctionnalité migrée vers vente-service',
+      microservice: 'http://localhost:3004/api/ventes',
+      redirect_via: 'http://localhost:8000/api/v1/ventes (Load Balancer)',
+      method: 'POST'
+    });
   }
 
   async annulerVente(req, res, next) {
-    try {
-      const vente = await this.applicationService.annulerVente(req.params.id);
-      res.json(vente);
-    } catch (error) {
-      next(error);
-    }
+    return res.status(410).json({
+      error: 'LEGACY_DEACTIVATED',
+      message: 'Fonctionnalité migrée vers vente-service',
+      microservice: `http://localhost:3004/api/ventes/${req.params.id}/annuler`,
+      redirect_via: `http://localhost:8000/api/v1/ventes/${req.params.id}/annuler (Load Balancer)`,
+      method: 'POST'
+    });
   }
 
-  // Stock
-  async obtenirStock(req, res, next) {
-    try {
-      const stock = await this.applicationService.obtenirStock(req.params.produitId);
-      res.json({ stock });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // Magasins
-  async listerMagasins(req, res, next) {
-    try {
-      const { Magasin } = require('../../models');
-      const magasins = await Magasin.findAll();
-      res.json(magasins);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // Utilisateurs
-  async listerUtilisateurs(req, res, next) {
-    try {
-      const { Utilisateur } = require('../../models');
-      const { magasinId } = req.query;
-      const where = magasinId ? { magasinId } : {};
-      const utilisateurs = await Utilisateur.findAll({ where });
-      res.json(utilisateurs);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // Rapports
+  // Rapports -> MIGRÉ vers reporting-service
   async genererRapports(req, res, next) {
-    try {
-      const { Vente, Magasin, Utilisateur } = require('../../models');
-      
-      // Rapport simple des ventes par magasin
-      const ventesParMagasin = await Vente.findAll({
-        include: [
-          { model: Magasin, as: 'magasin', attributes: ['nom'] },
-          { model: Utilisateur, as: 'utilisateur', attributes: ['nom'] }
-        ],
-        order: [['createdAt', 'DESC']]
-      });
-
-      const resume = {
-        totalVentes: ventesParMagasin.length,
-        chiffreAffaireTotal: ventesParMagasin.reduce((sum, v) => sum + (parseFloat(v.montantTotal) || 0), 0),
-        ventes: ventesParMagasin
-      };
-
-      res.json(resume);
-    } catch (error) {
-      next(error);
-    }
+    return res.status(410).json({
+      error: 'LEGACY_DEACTIVATED',
+      message: 'Fonctionnalité migrée vers reporting-service',
+      microservice: 'http://localhost:3005/api/reports',
+      redirect_via: 'http://localhost:8000/api/v1/reports (Load Balancer)'
+    });
   }
+
+  // === MÉTHODES ACTIVES - DOMAINES NON MIGRES ===
 
   // Health Check
   async healthCheck(req, res, next) {

@@ -1,5 +1,6 @@
 /**
  * Configuration Jest pour les tests de l'architecture hybride
+ * Configuration consolidée pour Windows/PowerShell
  */
 
 module.exports = {
@@ -20,7 +21,8 @@ module.exports = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/coverage/',
-    '/reports/'
+    '/reports/',
+    '/scripts/'
   ],
   
   // Configuration de la couverture de code

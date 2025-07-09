@@ -1,0 +1,62 @@
+@startuml Vue_Cas_Utilisation
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Vue des Cas d'Utilisation - Système E-Commerce
+
+actor "Client Web" as client
+actor "Gestionnaire Stock" as manager
+actor "Analyste Métier" as analyst
+actor "Administrateur" as admin
+
+rectangle "Système E-Commerce" {
+  usecase "Consulter Catalogue" as UC1
+  usecase "Passer Commande" as UC2
+  usecase "Gérer Stock" as UC3
+  usecase "Analyser Ventes" as UC4
+  usecase "Administrer Système" as UC5
+  usecase "Générer Rapports" as UC6
+  usecase "Synchroniser Legacy" as UC7
+}
+
+rectangle "Système Legacy" as legacy
+
+client --> UC1 : consulte
+client --> UC2 : commande
+
+manager --> UC3 : gère
+manager --> UC6 : génère
+
+analyst --> UC4 : analyse
+analyst --> UC6 : consulte
+
+admin --> UC5 : administre
+admin --> UC7 : synchronise
+
+UC3 --> legacy : lit/écrit
+UC7 --> legacy : synchronise
+
+note right of UC1
+  - Rechercher produits
+  - Filtrer par catégorie
+  - Consulter détails
+end note
+
+note right of UC2
+  - Ajouter au panier
+  - Valider commande
+  - Suivre livraison
+end note
+
+note right of UC3
+  - Mettre à jour stock
+  - Alertes rupture
+  - Inventaire
+end note
+
+note right of UC4
+  - Dashboard ventes
+  - Tendances
+  - KPI métier
+end note
+
+@enduml

@@ -1,4 +1,4 @@
-// src/api/servers.js
+// src// const restApi       = require('./rest');    // ← Module supprimé - routes migrées vers microservicesapi/servers.js
 
 require('dotenv').config();
 require('../models/associations');
@@ -42,8 +42,8 @@ app.get('/', (req, res) => {
   res.send('🚀 API LOG430 Lab TB POS – en marche !');
 });
 
-// 1) votre API REST
-app.use('/api/v1', restApi);
+// 1) Routes legacy supprimées - fonctionnalités migrées vers les microservices
+// Seules les routes de système restent actives (health, metrics, documentation)
 
 // 2) génération du spec OpenAPI à partir de vos JSDoc dans les routes
 const swaggerSpec = swaggerJsdoc({

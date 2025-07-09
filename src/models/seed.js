@@ -1,4 +1,11 @@
-console.log('--- Démarrage du script de seed COMPLET ---');
+// ⚠️  SCRIPT DEPRECIÉ - DONNÉES MIGREES VERS MICROSERVICES
+// Ce script n'est plus utilisé car les données sont maintenant gérées par :
+// - produit-service (port 3001) pour les produits
+// - vente-service (port 3004) pour les ventes
+// - stock-service (port 3002) pour le stock
+// Ce script est maintenu pour compatibilité mais ne doit plus être exécuté
+
+console.log('--- ⚠️  SCRIPT DEPRECIÉ - Démarrage du script de seed COMPLET ---');
 const { sequelize, Magasin, Utilisateur, Produit, Vente, LigneVente } = require('./index');
 require('./associations');
 

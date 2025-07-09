@@ -1,0 +1,243 @@
+version: '3.8'
+
+services:
+  # API Gateway - Point d'entrée unique
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.hybrid-router
+    ports:
+      - "9000:9000"
+    environment:
+      - NODE_ENV=production
+      - PRODUIT_SERVICE_URL=http://produit-service:3001
+      - STOCK_SERVICE_URL=http://stock-service:3002
+      - VENTE_SERVICE_URL=http://vente-service:3004
+      - REPORTING_SERVICE_URL=http://reporting-service:3005
+      - LEGACY_SERVICE_URL=http://legacy-app:3000
+      - JWT_SECRET=${JWT_SECRET:-default-jwt-secret-change-me}
+      - PROMETHEUS_ENABLED=true
+    depends_on:
+      - produit-service
+      - stock-service
+      - vente-service
+      - reporting-service
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Produit Service - Gestion du catalogue
+  produit-service:
+    build: ./microservices/produit-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/produits.db
+      - PROMETHEUS_ENABLED=true
+    volumes:
+      - produit_data:/app/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Stock Service - Gestion des inventaires
+  stock-service:
+    build: ./microservices/stock-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/stock.db
+      - PROMETHEUS_ENABLED=true
+    volumes:
+      - stock_data:/app/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Vente Service - Gestion des commandes
+  vente-service:
+    build: ./microservices/vente-service
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/ventes.db
+      - PROMETHEUS_ENABLED=true
+    volumes:
+      - vente_data:/app/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Reporting Service - Analytics et KPI
+  reporting-service:
+    build: ./microservices/reporting-service
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/reporting.db
+      - PROMETHEUS_ENABLED=true
+    volumes:
+      - reporting_data:/app/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Legacy Application - En transition
+  legacy-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.legacy
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/legacy.db
+    volumes:
+      - legacy_data:/app/data
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Prometheus - Monitoring des métriques
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
+      - produit-service
+      - stock-service
+      - vente-service
+      - reporting-service
+
+  # Grafana - Dashboards et visualisation
+  grafana:
+    image: grafana/grafana-oss:9.5.15
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SERVER_ROOT_URL=http://localhost:3030
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Node Exporter - Métriques système
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+networks:
+  ecommerce-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  produit_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/produit
+  stock_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/stock
+  vente_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/vente
+  reporting_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/reporting
+  legacy_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/legacy
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

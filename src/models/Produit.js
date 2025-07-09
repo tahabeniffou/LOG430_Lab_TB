@@ -1,5 +1,10 @@
 const { Model, DataTypes } = require('sequelize');
 
+// ⚠️  MODÈLE DEPRECIÉ - MIGRÉ VERS MICROSERVICE
+// Ce modèle est maintenu pour compatibilité legacy mais ne doit plus être utilisé
+// Nouveau service : produit-service (port 3001)
+// Utiliser : http://localhost:8000/api/v1/produits (via Load Balancer)
+
 module.exports = (sequelize, DataTypes) => {
   class Produit extends Model {
     static associate(models) {

@@ -1,15 +1,60 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const promClient = require('prom-client');
 require('dotenv').config();
 
+// Configuration des métriques Prometheus
+const collectDefaultMetrics = promClient.collectDefaultMetrics;
+collectDefaultMetrics({ timeout: 5000 });
+
+// Métriques personnalisées
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code', 'service'],
+  buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10]
+});
+
+const httpRequestsTotal = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status_code', 'service']
+});
+
+const stockOperationsTotal = new promClient.Counter({
+  name: 'stock_operations_total',
+  help: 'Total number of stock operations',
+  labelNames: ['operation', 'service']
+});
+
 const app = express();
-const PORT = process.env.PORT || 3007;
+const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+// Middleware pour capturer les métriques
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = (Date.now() - start) / 1000;
+    const route = req.route ? req.route.path : req.path;
+    
+    httpRequestDuration
+      .labels(req.method, route, res.statusCode, 'stock-service')
+      .observe(duration);
+    
+    httpRequestsTotal
+      .labels(req.method, route, res.statusCode, 'stock-service')
+      .inc();
+  });
+  
+  next();
+});
 
 // In-memory stock data (pour démo - en production utilisez une base de données)
 let stocks = [
@@ -192,6 +237,16 @@ app.delete('/stocks/:id', (req, res) => {
     success: true,
     message: 'Stock supprimé avec succès'
   });
+});
+
+// Route pour exposer les métriques Prometheus
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
+  } catch (ex) {
+    res.status(500).end(ex);
+  }
 });
 
 // Route de santé
