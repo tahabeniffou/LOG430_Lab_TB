@@ -1,0 +1,378 @@
+version: '3.8'
+
+# Architecture Microservices Conforme aux Standards de l'Industrie
+# Database-per-Service + Event-Driven Communication
+
+services:
+  # =======================================
+  # BASES DE DONNÉES SÉPARÉES (Conformité Microservices)
+  # =======================================
+  
+  # PostgreSQL pour Produit Service (Déjà conforme)
+  postgres-produit:
+    image: postgres:15
+    container_name: postgres-produit-db
+    environment:
+      POSTGRES_DB: produit_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_produit_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # PostgreSQL pour Stock Service (NOUVEAU - Conforme)
+  postgres-stock:
+    image: postgres:15
+    container_name: postgres-stock-db
+    environment:
+      POSTGRES_DB: stock_service
+      POSTGRES_USER: stock_user
+      POSTGRES_PASSWORD: stock_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_stock_data:/var/lib/postgresql/data
+      - ./scripts/init-stock-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # MySQL pour Vente Service (NOUVEAU - Conforme)
+  mysql-vente:
+    image: mysql:8.0
+    container_name: mysql-vente-db
+    environment:
+      MYSQL_ROOT_PASSWORD: vente_password
+      MYSQL_DATABASE: vente_service_db
+      MYSQL_USER: vente_user
+      MYSQL_PASSWORD: vente_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_vente_data:/var/lib/mysql
+      - ./scripts/init-vente-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # MySQL pour Legacy System (SÉPARÉ - Conforme)
+  mysql-legacy:
+    image: mysql:8.0
+    container_name: mysql-legacy-db
+    environment:
+      MYSQL_ROOT_PASSWORD: legacy_password
+      MYSQL_DATABASE: legacy_system_db
+      MYSQL_USER: legacy_user
+      MYSQL_PASSWORD: legacy_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_legacy_data:/var/lib/mysql
+      - ./scripts/init-legacy-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Redis pour Cache + Event Bus
+  redis-cache:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Redis pour Event Bus (NOUVEAU - Event-Driven)
+  redis-events:
+    image: redis:7-alpine
+    container_name: redis-events
+    ports:
+      - "6380:6379"
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # =======================================
+  # MICROSERVICES CONFORMES
+  # =======================================
+
+  # Produit Service (Déjà conforme - Base dédiée)
+  produit-service-1:
+    build: ./microservices/produit-service
+    container_name: produit-service-1
+    environment:
+      - PORT=3001
+      - DB_HOST=postgres-produit
+      - DB_PORT=5432
+      - DB_NAME=produit_service
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_DIALECT=postgres
+      - REDIS_EVENTS_URL=redis://redis-events:6379
+      - INSTANCE_ID=1
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres-produit
+      - redis-events
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  produit-service-2:
+    build: ./microservices/produit-service
+    container_name: produit-service-2
+    environment:
+      - PORT=3005
+      - DB_HOST=postgres-produit
+      - DB_PORT=5432
+      - DB_NAME=produit_service
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_DIALECT=postgres
+      - REDIS_EVENTS_URL=redis://redis-events:6379
+      - INSTANCE_ID=2
+    ports:
+      - "3005:3005"
+    depends_on:
+      - postgres-produit
+      - redis-events
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  produit-service-3:
+    build: ./microservices/produit-service
+    container_name: produit-service-3
+    environment:
+      - PORT=3006
+      - DB_HOST=postgres-produit
+      - DB_PORT=5432
+      - DB_NAME=produit_service
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_DIALECT=postgres
+      - REDIS_EVENTS_URL=redis://redis-events:6379
+      - INSTANCE_ID=3
+    ports:
+      - "3006:3006"
+    depends_on:
+      - postgres-produit
+      - redis-events
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Vente Service (NOUVEAU - Base dédiée + Event-Driven)
+  vente-service:
+    build: ./microservices/vente-service
+    container_name: vente-service-compliant
+    environment:
+      - PORT=3004
+      - DB_HOST=mysql-vente
+      - DB_PORT=3306
+      - DB_NAME=vente_service_db
+      - DB_USER=vente_user
+      - DB_PASSWORD=vente_password
+      - DB_DIALECT=mysql
+      - REDIS_EVENTS_URL=redis://redis-events:6379
+      - REDIS_CACHE_URL=redis://redis-cache:6379
+      # Event-driven: pas d'appels directs aux autres services
+      - EVENT_DRIVEN=true
+    ports:
+      - "3004:3004"
+    depends_on:
+      - mysql-vente
+      - redis-events
+      - redis-cache
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Stock Service (NOUVEAU - Base dédiée PostgreSQL)
+  stock-service:
+    build: ./microservices/stock-service
+    container_name: stock-service-compliant
+    environment:
+      - PORT=3007
+      - DB_HOST=postgres-stock
+      - DB_PORT=5432
+      - DB_NAME=stock_service
+      - DB_USER=stock_user
+      - DB_PASSWORD=stock_password
+      - DB_DIALECT=postgres
+      - REDIS_EVENTS_URL=redis://redis-events:6379
+      - REDIS_CACHE_URL=redis://redis-cache:6379
+    ports:
+      - "3007:3007"
+    depends_on:
+      - postgres-stock
+      - redis-events
+      - redis-cache
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Reporting Service (Read-Only + Cache)
+  reporting-service:
+    build: ./microservices/reporting-service
+    container_name: reporting-service-compliant
+    environment:
+      - PORT=3008
+      - REDIS_CACHE_URL=redis://redis-cache:6379
+      - REDIS_EVENTS_URL=redis://redis-events:6379
+      # Read-only access to multiple databases
+      - VENTE_DB_HOST=mysql-vente
+      - VENTE_DB_NAME=vente_service_db
+      - STOCK_DB_HOST=postgres-stock
+      - STOCK_DB_NAME=stock_service
+      - PRODUIT_DB_HOST=postgres-produit
+      - PRODUIT_DB_NAME=produit_service
+    ports:
+      - "3008:3008"
+    depends_on:
+      - redis-cache
+      - redis-events
+      - mysql-vente
+      - postgres-stock
+      - postgres-produit
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Legacy System (Base séparée)
+  legacy-system:
+    build:
+      context: .
+      dockerfile: Dockerfile.legacy
+    container_name: legacy-system-compliant
+    environment:
+      - PORT=3000
+      - DB_HOST=mysql-legacy
+      - DB_PORT=3306
+      - DB_NAME=legacy_system_db
+      - DB_USER=legacy_user
+      - DB_PASSWORD=legacy_password
+      - DB_DIALECT=mysql
+      - REDIS_CACHE_URL=redis://redis-cache:6379
+      - REDIS_EVENTS_URL=redis://redis-events:6379
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql-legacy
+      - redis-cache
+      - redis-events
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # =======================================
+  # LOAD BALANCER (avec Circuit Breakers)
+  # =======================================
+
+  load-balancer:
+    build:
+      context: .
+      dockerfile: Dockerfile.loadbalancer
+    container_name: load-balancer-compliant
+    environment:
+      - PORT=8000
+      - TARGET_SERVICES=http://produit-service-1:3001,http://produit-service-2:3005,http://produit-service-3:3006
+      - CIRCUIT_BREAKER_ENABLED=true
+      - HEALTH_CHECK_INTERVAL=30000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - produit-service-1
+      - produit-service-2
+      - produit-service-3
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # =======================================
+  # API GATEWAY avec Circuit Breakers
+  # =======================================
+
+  kong:
+    image: kong:3.0
+    container_name: kong-gateway-compliant
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong-compliant.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+    volumes:
+      - ./config/kong-compliant.yml:/kong/declarative/kong-compliant.yml
+    ports:
+      - "8001:8000"  # Proxy
+      - "8002:8001"  # Admin API
+    depends_on:
+      - load-balancer
+      - vente-service
+      - stock-service
+      - reporting-service
+      - legacy-system
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # =======================================
+  # MONITORING (Inchangé - Déjà conforme)
+  # =======================================
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-compliant
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus-compliant.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-compliant
+    ports:
+      - "3333:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_compliant_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+volumes:
+  postgres_produit_data:
+  postgres_stock_data:
+  mysql_vente_data:
+  mysql_legacy_data:
+  grafana_compliant_data:
+
+networks:
+  microservices-network:
+    driver: bridge
+    name: microservices-compliant-network

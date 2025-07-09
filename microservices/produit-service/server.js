@@ -7,6 +7,7 @@ require('dotenv').config();
 const Produit = require('./src/domain/Produit');
 const SequelizeProduitRepository = require('./src/infrastructure/SequelizeProduitRepository');
 const { sequelize } = require('./src/infrastructure/database');
+const CircuitBreakerService = require('./src/CircuitBreakerService');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,12 +29,19 @@ app.use((req, res, next) => {
 
 // Initialisation de la base de données et du repository
 let produitRepository;
+let dbCircuitBreaker;
 
 async function initializeDatabase() {
   try {
-    // Test de connexion
-    await sequelize.authenticate();
-    console.log('✅ Connexion à la base de données établie avec succès.');
+    // Initialisation du circuit breaker pour la base de données
+    dbCircuitBreaker = CircuitBreakerService.createDatabaseCircuitBreaker(async () => {
+      await sequelize.authenticate();
+      return sequelize;
+    });
+    
+    // Test de connexion avec circuit breaker
+    await dbCircuitBreaker.fire();
+    console.log('✅ Connexion à la base de données établie avec succès (Circuit Breaker actif).');
     
     // Synchronisation des modèles
     await sequelize.sync({ alter: true });
@@ -83,19 +91,25 @@ app.get('/api/produits', async (req, res) => {
   try {
     const { categorie, recherche, stock_faible, rupture } = req.query;
     
-    let produits;
-    if (rupture === 'true') {
-      produits = await produitRepository.listerEnRupture();
-    } else if (stock_faible) {
-      const seuil = parseInt(stock_faible) || 10;
-      produits = await produitRepository.listerStockFaible(seuil);
-    } else if (categorie) {
-      produits = await produitRepository.trouverParCategorie(categorie);
-    } else if (recherche) {
-      produits = await produitRepository.rechercherParNom(recherche);
-    } else {
-      produits = await produitRepository.listerTous();
-    }
+    // Utilisation du circuit breaker pour les appels de base de données
+    const serviceCircuitBreaker = CircuitBreakerService.createServiceCircuitBreaker(async () => {
+      let produits;
+      if (rupture === 'true') {
+        produits = await produitRepository.listerEnRupture();
+      } else if (stock_faible) {
+        const seuil = parseInt(stock_faible) || 10;
+        produits = await produitRepository.listerStockFaible(seuil);
+      } else if (categorie) {
+        produits = await produitRepository.trouverParCategorie(categorie);
+      } else if (recherche) {
+        produits = await produitRepository.rechercherParNom(recherche);
+      } else {
+        produits = await produitRepository.listerTous();
+      }
+      return produits;
+    });
+    
+    const produits = await serviceCircuitBreaker.fire();
     
     res.json({
       success: true,

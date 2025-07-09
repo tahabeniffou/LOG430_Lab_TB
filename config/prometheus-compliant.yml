@@ -1,0 +1,110 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Kong Gateway metrics (compliant)
+  - job_name: 'kong-compliant'
+    static_configs:
+      - targets: ['kong-gateway-compliant:8001']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Load Balancer (compliant)
+  - job_name: 'load-balancer-compliant'
+    static_configs:
+      - targets: ['load-balancer-compliant:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Produit Service (3 instances avec DB dédiée)
+  - job_name: 'produit-service-compliant'
+    static_configs:
+      - targets: 
+          - 'produit-service-1:3001'
+          - 'produit-service-2:3005'
+          - 'produit-service-3:3006'
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Vente Service (DB dédiée MySQL)
+  - job_name: 'vente-service-compliant'
+    static_configs:
+      - targets: ['vente-service-compliant:3004']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Stock Service (DB dédiée PostgreSQL)
+  - job_name: 'stock-service-compliant'
+    static_configs:
+      - targets: ['stock-service-compliant:3007']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Reporting Service (Multi-sources)
+  - job_name: 'reporting-service-compliant'
+    static_configs:
+      - targets: ['reporting-service-compliant:3008']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Legacy System (DB séparée)
+  - job_name: 'legacy-system-compliant'
+    static_configs:
+      - targets: ['legacy-system-compliant:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Bases de données
+  - job_name: 'postgres-produit'
+    static_configs:
+      - targets: ['postgres-produit-db:5432']
+    scrape_interval: 60s
+
+  - job_name: 'postgres-stock'
+    static_configs:
+      - targets: ['postgres-stock-db:5432']
+    scrape_interval: 60s
+
+  - job_name: 'mysql-vente'
+    static_configs:
+      - targets: ['mysql-vente-db:3306']
+    scrape_interval: 60s
+
+  - job_name: 'mysql-legacy'
+    static_configs:
+      - targets: ['mysql-legacy-db:3306']
+    scrape_interval: 60s
+
+  # Redis instances
+  - job_name: 'redis-cache'
+    static_configs:
+      - targets: ['redis-cache:6379']
+    scrape_interval: 60s
+
+  - job_name: 'redis-events'
+    static_configs:
+      - targets: ['redis-events:6379']
+    scrape_interval: 60s
+
+  # Circuit Breaker metrics (custom)
+  - job_name: 'circuit-breakers'
+    static_configs:
+      - targets: 
+          - 'produit-service-1:3001'
+          - 'vente-service-compliant:3004'
+          - 'stock-service-compliant:3007'
+          - 'reporting-service-compliant:3008'
+    metrics_path: '/circuit-breaker/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 5s

@@ -55,6 +55,7 @@
     "http-proxy-middleware": "^2.0.9",
     "inquirer": "^8.2.6",
     "morgan": "^1.10.0",
+    "opossum": "^9.0.0",
     "pg": "^8.16.0",
     "pg-hstore": "^2.3.4",
     "prom-client": "^15.1.3",
