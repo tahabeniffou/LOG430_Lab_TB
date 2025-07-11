@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # Base de données PostgreSQL
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: posdb
+      POSTGRES_USER: posuser
+      POSTGRES_PASSWORD: pospass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U posuser -d posdb"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # API REST du POS
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - POSTGRES_DB=posdb
+      - POSTGRES_USER=posuser
+      - POSTGRES_PASSWORD=pospass
+      - POSTGRES_HOST=db
+      - PORT=3000
+      - CORS_ORIGINS=*
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: ["node", "src/api/servers.js"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Console POS (Magasin)
+  pos-console:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - POSTGRES_DB=posdb
+      - POSTGRES_USER=posuser
+      - POSTGRES_PASSWORD=pospass
+      - POSTGRES_HOST=db
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks:
+      - pos-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    command: ["node", "src/appConsole.js"]
+
+  # Console Maison Mère
+  maison-mere-console:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - POSTGRES_DB=posdb
+      - POSTGRES_USER=posuser
+      - POSTGRES_PASSWORD=pospass
+      - POSTGRES_HOST=db
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    networks:
+      - pos-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    command: ["node", "src/maisonMereConsole.js"]
+
+networks:
+  pos-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
