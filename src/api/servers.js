@@ -4,7 +4,6 @@ require('dotenv').config();
 require('../models/associations');
 const express       = require('express');
 const cors          = require('cors');
-const restApi       = require('./rest');    // ← c’est maintenant un Router
 const swaggerJsdoc  = require('swagger-jsdoc');
 const swaggerUi     = require('swagger-ui-express');
 const redocExpress  = require('redoc-express');

@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # API Gateway - Point d'entrée unique
   api-gateway:
     build:
       context: .
@@ -10,227 +9,202 @@ services:
       - "9000:9000"
     environment:
       - NODE_ENV=production
-      - PRODUIT_SERVICE_URL=http://produit-service:3001
-      - STOCK_SERVICE_URL=http://stock-service:3002
-      - VENTE_SERVICE_URL=http://vente-service:3004
-      - REPORTING_SERVICE_URL=http://reporting-service:3005
-      - LEGACY_SERVICE_URL=http://legacy-app:3000
-      - JWT_SECRET=${JWT_SECRET:-default-jwt-secret-change-me}
+      - PRODUIT_SERVICE_URLS=http://produit-service-1:3001,http://produit-service-2:3011,http://produit-service-3:3021
+      - STOCK_SERVICE_URLS=http://stock-service-1:3002,http://stock-service-2:3012,http://stock-service-3:3022
+      - VENTE_SERVICE_URLS=http://vente-service-1:3004,http://vente-service-2:3014,http://vente-service-3:3024
+      - REPORTING_SERVICE_URLS=http://reporting-service-1:3005,http://reporting-service-2:3015,http://reporting-service-3:3025
+      - LEGACY_SERVICE_URL=http://legacy-app:3030
       - PROMETHEUS_ENABLED=true
     depends_on:
-      - produit-service
-      - stock-service
-      - vente-service
-      - reporting-service
+      - produit-service-1
+      - produit-service-2
+      - produit-service-3
+      - stock-service-1
+      - stock-service-2
+      - stock-service-3
+      - vente-service-1
+      - vente-service-2
+      - vente-service-3
+      - reporting-service-1
+      - reporting-service-2
+      - reporting-service-3
     networks:
-      - ecommerce-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - pos-network
 
-  # Produit Service - Gestion du catalogue
-  produit-service:
+  produit-service-1:
     build: ./microservices/produit-service
-    ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=production
-      - DB_PATH=/app/data/produits.db
-      - PROMETHEUS_ENABLED=true
-    volumes:
-      - produit_data:/app/data
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    ports: ["3001:3001"]
+    volumes: ["produit_data_1:/app/data"]
+    networks: [pos-network]
+  produit-service-2:
+    build: ./microservices/produit-service
+    ports: ["3011:3011"]
+    volumes: ["produit_data_2:/app/data"]
+    networks: [pos-network]
+  produit-service-3:
+    build: ./microservices/produit-service
+    ports: ["3021:3021"]
+    volumes: ["produit_data_3:/app/data"]
+    networks: [pos-network]
 
-  # Stock Service - Gestion des inventaires
-  stock-service:
+  stock-service-1:
     build: ./microservices/stock-service
-    ports:
-      - "3002:3002"
-    environment:
-      - NODE_ENV=production
-      - DB_PATH=/app/data/stock.db
-      - PROMETHEUS_ENABLED=true
-    volumes:
-      - stock_data:/app/data
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    ports: ["3002:3002"]
+    volumes: ["stock_data_1:/app/data"]
+    networks: [pos-network]
+  stock-service-2:
+    build: ./microservices/stock-service
+    ports: ["3012:3012"]
+    volumes: ["stock_data_2:/app/data"]
+    networks: [pos-network]
+  stock-service-3:
+    build: ./microservices/stock-service
+    ports: ["3022:3022"]
+    volumes: ["stock_data_3:/app/data"]
+    networks: [pos-network]
 
-  # Vente Service - Gestion des commandes
-  vente-service:
+  vente-service-1:
     build: ./microservices/vente-service
-    ports:
-      - "3004:3004"
-    environment:
-      - NODE_ENV=production
-      - DB_PATH=/app/data/ventes.db
-      - PROMETHEUS_ENABLED=true
-    volumes:
-      - vente_data:/app/data
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    ports: ["3004:3004"]
+    volumes: ["vente_data_1:/app/data"]
+    networks: [pos-network]
+  vente-service-2:
+    build: ./microservices/vente-service
+    ports: ["3014:3014"]
+    volumes: ["vente_data_2:/app/data"]
+    networks: [pos-network]
+  vente-service-3:
+    build: ./microservices/vente-service
+    ports: ["3024:3024"]
+    volumes: ["vente_data_3:/app/data"]
+    networks: [pos-network]
 
-  # Reporting Service - Analytics et KPI
-  reporting-service:
+  reporting-service-1:
     build: ./microservices/reporting-service
-    ports:
-      - "3005:3005"
-    environment:
-      - NODE_ENV=production
-      - DB_PATH=/app/data/reporting.db
-      - PROMETHEUS_ENABLED=true
-    volumes:
-      - reporting_data:/app/data
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    ports: ["3005:3005"]
+    volumes: ["reporting_data_1:/app/data"]
+    networks: [pos-network]
+  reporting-service-2:
+    build: ./microservices/reporting-service
+    ports: ["3015:3015"]
+    volumes: ["reporting_data_2:/app/data"]
+    networks: [pos-network]
+  reporting-service-3:
+    build: ./microservices/reporting-service
+    ports: ["3025:3025"]
+    volumes: ["reporting_data_3:/app/data"]
+    networks: [pos-network]
 
-  # Legacy Application - En transition
   legacy-app:
     build:
       context: .
       dockerfile: Dockerfile.legacy
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DB_PATH=/app/data/legacy.db
-    volumes:
-      - legacy_data:/app/data
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    ports: ["3030:3000"]
+    volumes: ["legacy_data:/app/data"]
+    networks: [pos-network]
 
-  # Prometheus - Monitoring des métriques
   prometheus:
     image: prom/prometheus:v2.45.0
-    ports:
-      - "9090:9090"
+    ports: ["9090:9090"]
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=15d'
-      - '--web.enable-lifecycle'
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-    depends_on:
-      - api-gateway
-      - produit-service
-      - stock-service
-      - vente-service
-      - reporting-service
+    networks: [pos-network]
 
-  # Grafana - Dashboards et visualisation
   grafana:
     image: grafana/grafana-oss:9.5.15
-    ports:
-      - "3030:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_SERVER_ROOT_URL=http://localhost:3030
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    ports: ["3030:3000"]
     volumes:
       - grafana_data:/var/lib/grafana
       - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
-    depends_on:
-      - prometheus
+    networks: [pos-network]
 
-  # Node Exporter - Métriques système
   node-exporter:
     image: prom/node-exporter:v1.6.1
-    ports:
-      - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    networks:
-      - ecommerce-network
-    restart: unless-stopped
+    ports: ["9100:9100"]
+    networks: [pos-network]
 
 networks:
-  ecommerce-network:
+  pos-network:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.25.0.0/16
 
 volumes:
-  produit_data:
+  produit_data_1:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./data/produit
-  stock_data:
+      device: ./data/produit1
+  produit_data_2:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./data/stock
-  vente_data:
+      device: ./data/produit2
+  produit_data_3:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./data/vente
-  reporting_data:
+      device: ./data/produit3
+  stock_data_1:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ./data/reporting
+      device: ./data/stock1
+  stock_data_2:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/stock2
+  stock_data_3:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/stock3
+  vente_data_1:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/vente1
+  vente_data_2:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/vente2
+  vente_data_3:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/vente3
+  reporting_data_1:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/reporting1
+  reporting_data_2:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/reporting2
+  reporting_data_3:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/reporting3
   legacy_data:
     driver: local
     driver_opts:
