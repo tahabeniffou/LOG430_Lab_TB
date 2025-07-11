@@ -25,29 +25,38 @@ Développement d'un **API Gateway custom** en Node.js plutôt qu'une solution ex
 
 ### Architecture de Routage
 
-#### Pattern de Routage par Domaine
+#### Pattern de Routage par Domaine (API v2)
 ```
-/api/v1/produits/*    → Produit Service (3001)
-/api/v1/stock/*       → Stock Service (3002)  
-/api/v1/ventes/*      → Vente Service (3004)
-/api/v1/reports/*     → Reporting Service (3005)
-/api/v1/health        → Health Check global
+/api/v2/produits/*    → Produit Service (3001)
+/api/v2/stocks/*      → Stock Service (3002)  
+/api/v2/ventes/*      → Vente Service (3004)
+/api/v2/reports/*     → Reporting Service (3005)
+/health               → Health Check global
+/routing-info         → Information de routage
 ```
 
-#### Stratégie de Fallback
-- **Domaines migrés** : Routage vers microservices uniquement
-- **Legacy endpoints** : Retour HTTP 410 Gone + message de redirection
-- **Endpoints inconnus** : HTTP 404 avec suggestion d'API correcte
+#### Routage Hybride par Console
+- **Routes POS** (`/pos/*`) : Système legacy + microservices sélectifs
+- **Routes Maison Mère** (`/maisonmere/*`) : Système legacy + reporting
+- **Routes API v2** (`/api/v2/*`) : 100% microservices
 
-#### Configuration Centralisée
+#### Configuration Services
 ```javascript
-const serviceConfig = {
-  produits: {
-    baseUrl: 'http://localhost:3001',
-    prefix: '/api/v1/produits',
-    healthPath: '/health',
-    timeout: 5000
-  },
+const SERVICES = {
+  legacy: 'http://localhost:3000',
+  microservices: {
+    produit: 'http://localhost:3001',
+    stock: 'http://localhost:3002',
+    vente: 'http://localhost:3004',
+    reporting: 'http://localhost:3005'
+  }
+};
+```
+
+#### Port et Déploiement
+- **API Gateway Port** : 9000 (point d'entrée principal)
+- **Legacy System** : 3000 (support consoles)
+- **Microservices** : 3001, 3002, 3004, 3005
   stock: {
     baseUrl: 'http://localhost:3002', 
     prefix: '/api/v1/stock',

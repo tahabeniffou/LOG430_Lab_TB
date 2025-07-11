@@ -8,7 +8,7 @@ const request = require('supertest');
 describe('Tests de Monitoring et Observabilité', () => {
   const prometheusURL = 'http://localhost:9090';
   const grafanaURL = 'http://localhost:3333';
-  const hybridRouterURL = 'http://localhost:9000';
+  const hybridRouterURL = 'http://localhost:3000';
 
   describe('Prometheus - Collecte de Métriques', () => {
     test('Prometheus server accessible', async () => {

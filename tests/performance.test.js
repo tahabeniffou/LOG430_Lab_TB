@@ -8,7 +8,7 @@ const request = require('supertest');
 describe('Tests de Performance et Load Balancing', () => {
   const directProduitURL = 'http://localhost:3001';
   const loadBalancerURL = 'http://localhost:8000';
-  const hybridRouterURL = 'http://localhost:9000';
+  const hybridRouterURL = 'http://localhost:3000';
   const kongGatewayURL = 'http://localhost:8001';
 
   describe('Performance - Accès Direct vs Gateway', () => {

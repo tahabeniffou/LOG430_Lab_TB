@@ -19,7 +19,7 @@ global.TEST_CONFIG = {
     produitService3: 'http://localhost:3006',
     stockService: 'http://localhost:3007',
     reportingService: 'http://localhost:3008',
-    hybridRouter: 'http://localhost:9000',
+    hybridRouter: 'http://localhost:3000',
     loadBalancer: 'http://localhost:8000',
     kongGateway: 'http://localhost:8001',
     kongAdmin: 'http://localhost:8002',

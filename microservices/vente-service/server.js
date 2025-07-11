@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const axios = require('axios');
+const client = require('prom-client');
 require('dotenv').config();
 
 // Import de la logique métier du microservice
@@ -12,7 +13,7 @@ const SequelizeVenteRepository = require('./src/infrastructure/SequelizeVenteRep
 const { sequelize } = require('./src/infrastructure/database');
 
 const app = express();
-const PORT = process.env.PORT || 3004;
+const PORT = process.env.PORT || 3003;
 
 // Configuration des autres microservices
 const PRODUIT_SERVICE_URL = process.env.PRODUIT_SERVICE_URL || 'http://localhost:3001';
@@ -113,6 +114,26 @@ async function verifierMagasinExiste(magasinId) {
     return null;
   }
 }
+
+// Création d'un registre de métriques
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+// Exemple de compteur HTTP
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Nombre total de requêtes HTTP',
+  labelNames: ['method', 'route', 'status'],
+});
+register.registerMetric(httpRequestCounter);
+
+// Middleware pour incrémenter le compteur
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    httpRequestCounter.inc({ method: req.method, route: req.path, status: res.statusCode });
+  });
+  next();
+});
 
 // Routes API REST
 
@@ -470,6 +491,12 @@ app.get('/health', (req, res) => {
       magasinService: MAGASIN_SERVICE_URL
     }
   });
+});
+
+// Endpoint Prometheus
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
 });
 
 // Gestion des erreurs 404

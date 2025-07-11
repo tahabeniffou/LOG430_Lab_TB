@@ -6,7 +6,7 @@
 const request = require('supertest');
 
 describe('Tests d\'Intégration Complets', () => {
-  const hybridRouterURL = 'http://localhost:9000';
+  const hybridRouterURL = 'http://localhost:3000';
   const kongGatewayURL = 'http://localhost:8001';
   const legacySystemURL = 'http://localhost:3000';
 

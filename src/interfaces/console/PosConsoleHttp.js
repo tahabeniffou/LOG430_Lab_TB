@@ -1,12 +1,12 @@
-// Console POS HTTP - Utilise le Load Balancer
+// Console POS HTTP - Utilise l'API Gateway
 const axios = require('axios');
 const inquirer = require('inquirer');
 const Table = require('cli-table3');
 const chalk = require('chalk');
 
 class PosConsoleHttp {
-  constructor(apiBaseUrl = 'http://localhost:8000') {
-    this.apiBaseUrl = `${apiBaseUrl}/api/v1`;
+  constructor(apiBaseUrl = 'http://localhost:3000') {
+    this.apiBaseUrl = `${apiBaseUrl}/pos`;
     this.magasinActuel = null;
     this.utilisateurActuel = null;
     this.utilisateurConnecte = null;
@@ -37,7 +37,9 @@ class PosConsoleHttp {
 
   async verifierConnectivite() {
     console.log(chalk.yellow('🔍 Vérification de la connectivité...'));
-    const response = await axios.get(`${this.apiBaseUrl.replace('/api/v1', '')}/health`);
+    const healthUrl = `${this.apiBaseUrl.replace('/pos', '')}/health`;
+    console.log(chalk.gray(`🔗 Tentative de connexion: ${healthUrl}`));
+    const response = await axios.get(healthUrl);
     if (response.data.status === 'OK') {
       console.log(chalk.green('✅ Connexion au système réussie'));
       return true;

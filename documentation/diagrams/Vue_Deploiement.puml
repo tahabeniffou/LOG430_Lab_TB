@@ -1,32 +1,42 @@
 @startuml Vue_Deploiement
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
 
-title Vue de Déploiement - Architecture Production
+title Vue de Déploiement - Système POS Architecture Production
 
-Deployment_Node(lb, "Load Balancer", "NGINX/Kong") {
-  Container(gateway, "API Gateway", "Kong:8000", "Routage et sécurité")
+Deployment_Node(client_tier, "Poste Client", "Magasin") {
+  Container(pos_console, "Console POS", "Node.js CLI", "Interface vendeur")
+  Container(admin_console, "Console Admin", "Node.js CLI", "Interface gestion")
 }
 
-Deployment_Node(app_cluster, "Cluster Application", "Docker Swarm/K8s") {
-  Deployment_Node(microservices, "Microservices") {
+Deployment_Node(gateway_tier, "API Gateway", "Port 9000") {
+  Container(gateway, "Hybrid Router", "Node.js:9000", "Routage intelligent + Métriques")
+}
+
+Deployment_Node(app_cluster, "Cluster Microservices", "Docker/PM2") {
+  Deployment_Node(microservices, "Services Métier") {
     Container(produit, "Service Produit", "Node.js:3001", "Gestion catalogue")
-    Container(vente, "Service Vente", "Node.js:3002", "Gestion commandes")
-    Container(stock, "Service Stock", "Node.js:3003", "Gestion inventaire")
-    Container(reporting, "Service Reporting", "Node.js:3004", "Analytics")
+    Container(stock, "Service Stock", "Node.js:3002", "Gestion inventaire")
+    Container(vente, "Service Vente", "Node.js:3004", "Traitement ventes")
+    Container(reporting, "Service Reporting", "Node.js:3005", "Analytics")
   }
   
   Deployment_Node(legacy_node, "Legacy System") {
-    Container(legacy, "Système Legacy", "Node.js:3005", "Ancien système")
+    Container(legacy, "Application Legacy", "Node.js:3000", "Support consoles")
   }
 }
 
-Deployment_Node(data_cluster, "Cluster Données") {
-  Deployment_Node(db_node, "Base de Données") {
-    ContainerDb(db_produit, "DB Produit", "PostgreSQL:5432", "Catalogue produits")
-    ContainerDb(db_vente, "DB Vente", "PostgreSQL:5433", "Commandes")
-    ContainerDb(db_stock, "DB Stock", "PostgreSQL:5434", "Inventaire")
-    ContainerDb(db_legacy, "DB Legacy", "MySQL:3306", "Données historiques")
+Deployment_Node(data_cluster, "Stockage Local") {
+  Deployment_Node(db_node, "Bases SQLite") {
+    ContainerDb(db_produit, "produit.db", "SQLite", "Catalogue produits")
+    ContainerDb(db_stock, "stock.db", "SQLite", "Inventaire")
+    ContainerDb(db_vente, "vente.db", "SQLite", "Transactions")
+    ContainerDb(db_legacy, "legacy.db", "SQLite", "Données partagées")
   }
+}
+
+Deployment_Node(monitoring, "Monitoring", "Port 8080") {
+  Container(prometheus, "Métriques", "Prometheus", "Collecte métriques")
+  Container(dashboard, "Dashboard", "Node.js:8080", "Monitoring temps réel")
 }
 
 Deployment_Node(monitoring_cluster, "Monitoring") {

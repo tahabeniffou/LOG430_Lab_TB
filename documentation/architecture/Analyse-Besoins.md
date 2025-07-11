@@ -1,15 +1,15 @@
-# Analyse des Besoins - Système de Gestion Commerciale
+# Analyse des Besoins - Système Point de Vente (POS)
 
 ## 📋 Vue d'Ensemble
 
 ### Contexte Métier
-Le système de gestion commerciale doit supporter les opérations d'une entreprise e-commerce moderne avec des exigences de performance, fiabilité et évolutivité.
+Le système Point de Vente (POS) doit supporter les opérations quotidiennes d'une chaîne de magasins avec des exigences de performance, fiabilité et disponibilité.
 
 ### Objectifs Stratégiques
-- **Performance** : Supporter 1000+ utilisateurs concurrent
-- **Fiabilité** : 99.9% de disponibilité
-- **Évolutivité** : Croissance 300% sur 2 ans
-- **Agilité** : Time-to-market < 2 semaines pour nouvelles fonctionnalités
+- **Performance** : Traitement rapide des transactions en magasin
+- **Fiabilité** : 99.9% de disponibilité pendant les heures d'ouverture
+- **Évolutivité** : Support de nouveaux magasins et utilisateurs
+- **Simplicité** : Interface intuitive pour les vendeurs
 
 ---
 
@@ -18,36 +18,35 @@ Le système de gestion commerciale doit supporter les opérations d'une entrepri
 ### Acteurs Primaires
 | Acteur | Rôle | Besoins Principaux |
 |--------|------|-------------------|
-| **Client** | Utilisateur final | Navigation catalogue, commandes, suivi |
-| **Vendeur** | Équipe commerciale | Gestion ventes, suivi clients, rapports |
-| **Gestionnaire Stock** | Équipe logistique | Gestion inventaires, alertes stock |
-| **Analyste Métier** | Équipe direction | Rapports, KPI, analytics |
+| **Vendeur/Caissier** | Équipe magasin | Traitement ventes, consultation stock |
+| **Gérant Magasin** | Responsable local | Gestion stock local, rapports magasin |
+| **Admin Maison Mère** | Direction | Vue globale, rapports consolidés |
 
 ### Acteurs Secondaires
 | Acteur | Rôle | Besoins Principaux |
 |--------|------|-------------------|
-| **Administrateur Système** | IT Operations | Monitoring, configuration, maintenance |
-| **Développeur** | Équipe technique | APIs, documentation, debugging |
+| **Administrateur Système** | IT Operations | Monitoring, maintenance |
 
 ---
 
 ## 🎯 Exigences Fonctionnelles
 
-### 1. Gestion des Produits
-#### RF-001 : Catalogue Produits
-- **Description** : Gestion complète du catalogue produits
+### 1. Gestion des Produits (Catalogue Magasin)
+#### RF-001 : Catalogue Produits POS
+- **Description** : Gestion du catalogue produits vendus en magasin
 - **Critères d'acceptation** :
-  - [ ] Création/modification/suppression de produits
-  - [ ] Catégorisation hiérarchique
-  - [ ] Gestion des attributs dynamiques (taille, couleur, etc.)
-  - [ ] Import/export en lot (CSV, JSON)
-  - [ ] Recherche textuelle et par filtres
-  - [ ] Gestion des images et médias
+  - ✅ Consultation rapide du catalogue (Pain, Lait, Fromage, Jus, Biscuits)
+  - ✅ Recherche de produits par nom
+  - ✅ Affichage prix et disponibilité
+  - ✅ Gestion des codes-barres (simulé)
 
-#### RF-002 : Gestion des Prix
-- **Description** : Système de tarification flexible
+### 2. Gestion des Stocks
+#### RF-002 : Stock Temps Réel
+- **Description** : Suivi des stocks par magasin
 - **Critères d'acceptation** :
-  - [ ] Prix de base et promotionnels
+  - ✅ Consultation stock disponible par produit
+  - ✅ Mise à jour automatique lors des ventes
+  - ✅ Alertes stock bas
   - [ ] Règles de tarification par segment client
   - [ ] Historique des variations de prix
   - [ ] Tarification dynamique selon stock

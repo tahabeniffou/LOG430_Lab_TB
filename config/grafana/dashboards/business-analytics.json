@@ -1,0 +1,174 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "📈 POS Analytics - Vue Business",
+    "description": "Analyse des performances business du système POS",
+    "tags": ["pos", "business", "analytics"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "💳 Transactions Ventes",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"vente-service\",method=\"POST\"}[5m])",
+            "legendFormat": "Nouvelles Ventes",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(http_requests_total{job=\"vente-service\",method=\"GET\"}[5m])",
+            "legendFormat": "Consultations Ventes",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "🏪 Utilisation Consoles",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (console_type) (rate(routing_decisions_total[5m]))",
+            "legendFormat": "{{console_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "mappings": [
+              {
+                "options": {
+                  "pos": {"text": "Console POS"},
+                  "maisonmere": {"text": "Console Admin"}
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "📦 Consultations Produits",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"produit-service\"}[5m])",
+            "legendFormat": "Accès Catalogue",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "📊 Operations Stock",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(stock_operations_total[5m])",
+            "legendFormat": "{{operation}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 10, "x": 8, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "📈 Services les Plus Utilisés",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "topk(5, sum by (job) (rate(http_requests_total[5m])))",
+            "legendFormat": "{{job}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "orientation": "horizontal"
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 9, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "⚠️ Alertes Système",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "up == 0",
+            "legendFormat": "{{job}}",
+            "refId": "A",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "mappings": [
+              {
+                "options": {
+                  "0": {"text": "❌ DOWN", "color": "red"},
+                  "1": {"text": "✅ UP", "color": "green"}
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
+        "gridPos": {"h": 8, "w": 9, "x": 9, "y": 16}
+      }
+    ],
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "refresh": "10s",
+    "schemaVersion": 30,
+    "version": 1
+  }
+}

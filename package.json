@@ -5,35 +5,40 @@
   "description": "Architecture Hybride - LOG430 Lab TB",
   "main": "hybrid-router.js",
   "scripts": {
-    "start": "node hybrid-router.js",
+    "start": "node infrastructure/hybrid-router.js",
+    "start:all": "node tools/start-all-services.js",
     "start:legacy": "node app/app.js",
-    "dev": "nodemon hybrid-router.js",
+    "dev": "nodemon infrastructure/hybrid-router.js",
     "pos-console": "node src/interfaces/console/PosConsoleHttp.js",
     "maison-mere-console": "node src/interfaces/console/MaisonMereConsoleHttp.js",
     "seed": "node src/models/seed.js",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "install:all": "npm install && cd microservices/produit-service && npm install && cd ../stock-service && npm install && cd ../vente-service && npm install && cd ../reporting-service && npm install && cd ../..",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:system": "node tools/test-system.js",
+    "test:health": "jest tests/health.test.js",
+    "test:integration": "jest tests/integration.test.js",
+    "test:performance": "jest tests/performance.test.js",
+    "test:load": "k6 run tests/k6-load-test.js",
+    "test:load:advanced": "k6 run tests/k6-load-test-advanced.js",
+    "monitoring": "node tools/monitoring-dashboard.js",
+    "monitoring:grafana": "node tools/start-monitoring.js",
+    "monitoring:stop": "node tools/start-monitoring.js stop",
+    "monitoring:metrics": "node tools/monitor-with-stress.js",
+    "dashboards:open": "node tools/open-dashboards.js",
+    "dashboards:metrics": "start dashboard-metrics.html",
+    "stress:light": "node tools/stress-test.js light",
+    "stress:medium": "node tools/stress-test.js medium",
+    "stress:heavy": "node tools/stress-test.js heavy",
+    "stress:extreme": "node tools/stress-test.js extreme",
+    "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d --build",
     "docker:down": "docker-compose down -v",
     "docker:logs": "docker-compose logs -f",
     "docker:status": "docker-compose ps",
-    "deploy": "powershell -ExecutionPolicy Bypass -File ./scripts/start.ps1",
-    "deploy:hybrid": "powershell -ExecutionPolicy Bypass -File ./scripts/start-architecture-hybride.ps1",
-    "deploy:simple": "powershell -ExecutionPolicy Bypass -File ./scripts/start-architecture-simplifiee.ps1",
-    "deploy:compliant": "powershell -ExecutionPolicy Bypass -File ./scripts/start-compliant.ps1",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:all": "powershell -ExecutionPolicy Bypass -File ./scripts/run-tests.ps1",
-    "test:health": "jest tests/health.test.js",
-    "test:security": "jest tests/security.test.js",
-    "test:routing": "jest tests/routing.test.js",
-    "test:performance": "jest tests/performance.test.js",
-    "test:monitoring": "jest tests/monitoring.test.js",
-    "test:integration": "jest tests/integration.test.js",
-    "test:unit": "jest --testPathPattern=unit",
-    "validate": "powershell -ExecutionPolicy Bypass -File ./scripts/validate-architecture.ps1",
-    "generate:diagrams": "powershell -ExecutionPolicy Bypass -File ./scripts/generate-diagrams.ps1"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
     "@eslint/js": "^9.26.0",
@@ -94,15 +99,20 @@
     "testMatch": [
       "**/tests/**/*.test.js"
     ],
-    "setupFilesAfterEnv": ["<rootDir>/tests/jest.setup.js"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/jest.setup.js"
+    ],
     "testTimeout": 30000,
     "reporters": [
       "default",
-      ["jest-html-reporters", {
-        "publicPath": "./reports",
-        "filename": "jest-report.html",
-        "openReport": false
-      }]
+      [
+        "jest-html-reporters",
+        {
+          "publicPath": "./reports",
+          "filename": "jest-report.html",
+          "openReport": false
+        }
+      ]
     ]
   }
 }

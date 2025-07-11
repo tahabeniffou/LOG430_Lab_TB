@@ -7,7 +7,7 @@ const request = require('supertest');
 
 describe('Tests de Sécurité', () => {
   const kongGatewayURL = 'http://localhost:8001';
-  const hybridRouterURL = 'http://localhost:9000';
+  const hybridRouterURL = 'http://localhost:3000';
   const kongAdminURL = 'http://localhost:8002';
 
   describe('Configuration CORS', () => {

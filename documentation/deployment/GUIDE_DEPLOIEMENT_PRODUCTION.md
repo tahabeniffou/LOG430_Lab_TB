@@ -75,7 +75,7 @@ docker-compose logs api-gateway
 ```bash
 # Test connectivité
 curl http://localhost:9000/health
-curl http://localhost:9000/api/v1/produits
+curl http://localhost:9000/api/v2/produits
 
 # Test individual services
 curl http://localhost:3001/health  # Produit
@@ -94,9 +94,9 @@ curl http://localhost:3005/health  # Reporting
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: ecommerce
+  name: pos-system
   labels:
-    name: ecommerce
+    name: pos-system
 ---
 # k8s/configmap.yaml
 apiVersion: v1

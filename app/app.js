@@ -146,3 +146,83 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
+// Routes de base pour le système legacy
+app.get('/api/v1/magasins', (req, res) => {
+  console.log('Legacy: GET /api/v1/magasins');
+  res.json([
+    { id: 1, nom: 'Magasin Centre', adresse: '123 Rue Principale', statut: 'actif' },
+    { id: 2, nom: 'Magasin Nord', adresse: '456 Avenue du Nord', statut: 'actif' },
+    { id: 3, nom: 'Magasin Sud', adresse: '789 Boulevard Sud', statut: 'actif' }
+  ]);
+});
+
+app.get('/api/v1/produits', (req, res) => {
+  console.log('Legacy: GET /api/v1/produits');
+  res.json([
+    { id: 1, nom: 'Ordinateur Portable', prix: 899.99, disponible: true },
+    { id: 2, nom: 'Souris Wireless', prix: 29.99, disponible: true },
+    { id: 3, nom: 'Clavier Mécanique', prix: 79.99, disponible: true }
+  ]);
+});
+
+app.get('/api/v1/utilisateurs', (req, res) => {
+  console.log('Legacy: GET /api/v1/utilisateurs');
+  res.json([
+    { id: 1, nom: 'Admin', email: 'admin@example.com', role: 'admin', magasinId: null, motDePasse: 'admin' },
+    { id: 2, nom: 'Vendeur Centre', email: 'vendeur1@example.com', role: 'vendeur', magasinId: 1, motDePasse: 'vendeur' },
+    { id: 3, nom: 'Vendeur Nord', email: 'vendeur2@example.com', role: 'vendeur', magasinId: 2, motDePasse: 'vendeur' }
+  ]);
+});
+
+app.get('/api/v1/ventes', (req, res) => {
+  console.log('Legacy: GET /api/v1/ventes');
+  res.json([
+    { 
+      id: 1, 
+      produitId: 1, 
+      produitNom: 'Ordinateur Portable',
+      quantite: 1, 
+      montantTotal: 899.99, 
+      magasinId: 1,
+      magasinNom: 'Magasin Centre',
+      dateVente: new Date().toISOString(),
+      statut: 'completed'
+    },
+    { 
+      id: 2, 
+      produitId: 2, 
+      produitNom: 'Souris Wireless',
+      quantite: 2, 
+      montantTotal: 59.98, 
+      magasinId: 2,
+      magasinNom: 'Magasin Nord',
+      dateVente: new Date(Date.now() - 3600000).toISOString(),
+      statut: 'completed'
+    }
+  ]);
+});
+
+// Routes POST pour créer des resources
+app.post('/api/v1/ventes', (req, res) => {
+  console.log('Legacy: POST /api/v1/ventes', req.body);
+  const newVente = {
+    id: Math.floor(Math.random() * 1000) + 100,
+    ...req.body,
+    dateVente: new Date().toISOString(),
+    statut: 'completed'
+  };
+  res.status(201).json(newVente);
+});
+
+app.post('/api/v1/produits', (req, res) => {
+  console.log('Legacy: POST /api/v1/produits', req.body);
+  const newProduit = {
+    id: Math.floor(Math.random() * 1000) + 100,
+    ...req.body,
+    disponible: true
+  };
+  res.status(201).json(newProduit);
+});
+
+// Route générique pour les health checks

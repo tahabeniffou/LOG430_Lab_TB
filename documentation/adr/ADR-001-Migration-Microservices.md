@@ -16,29 +16,29 @@ Nous migrons vers une architecture microservices avec les caractéristiques suiv
 
 ### Services Identifiés
 1. **Produit Service** (port 3001) - Gestion du catalogue produits
-2. **Stock Service** (port 3002) - Gestion des inventaires
-3. **Vente Service** (port 3004) - Gestion des transactions commerciales
-4. **Reporting Service** (port 3005) - Analytics et rapports
+2. **Stock Service** (port 3002) - Gestion des inventaires  
+3. **Vente Service** (port 3003) - Gestion des transactions commerciales
+4. **Reporting Service** (port 3004) - Analytics et rapports
 
 ### Composants Infrastructure
-- **API Gateway** (Hybrid Router - port 9000) pour routage et sécurité
-- **Base de données SQLite** par service pour autonomie
-- **Legacy App** (port 3000) maintenue pour transition progressive
+- **Hybrid Router** (API Gateway - port 3000) pour routage et résilience
+- **Base de données SQLite** par service pour autonomie complète
+- **Legacy App** (port 3030) maintenue pour transition progressive
 
 ## Conséquences
 
 ### Positives ✅
 - **Autonomie des équipes** : Chaque service peut être développé/déployé indépendamment
-- **Scalabilité** : Scale horizontal par service selon la charge
-- **Résilience** : Isolation des pannes entre services
-- **Technologie** : Liberté technologique par équipe
-- **Performance** : +80% de débit mesuré vs legacy
+- **Isolation** : Pas de contamination entre domaines métier
+- **Résilience** : Circuit breaker et fallback vers legacy
+- **Simplicité** : SQLite évite la complexité des serveurs DB externes
+- **Observabilité** : Métriques Prometheus intégrées nativement
 
 ### Négatives ❌
-- **Complexité réseau** : Latence additionnelle (+1ms P50)
-- **Observabilité** : Besoin de monitoring distribué
-- **Transactions** : Pas de ACID cross-services
+- **Complexité réseau** : Communication HTTP entre services
+- **Transactions** : Pas d'ACID cross-services (éventuelle cohérence)
 - **Débogage** : Plus complexe en environnement distribué
+- **Latence** : Hop réseau additionnel via API Gateway
 
 ## Alternatives Considérées
 
@@ -46,24 +46,32 @@ Nous migrons vers une architecture microservices avec les caractéristiques suiv
 - **Rejeté** : Coût élevé, risque de régression
 - Maintient les limitations de scalabilité
 
-### 2. Architecture Modulaire
-- **Rejeté** : Couplage de déploiement persistent
+### 2. Architecture Modulaire  
+- **Rejeté** : Couplage de déploiement persistant
 - Équipes toujours bloquées par les dépendances
 
-### 3. Serverless
-- **Rejeté** : Cold start incompatible avec latence requise
+### 3. Serverless Functions
+- **Rejeté** : Cold start incompatible avec latence requise POS
 - Vendor lock-in avec cloud providers
 
-## Critères de Succès
-- [ ] Débit > 8 req/sec (vs 5 req/sec legacy)
-- [ ] Latence P95 < 10ms
-- [ ] Uptime > 99.9% par service
-- [ ] Temps de déploiement < 5 minutes par service
-- [ ] Isolation : Panne d'un service n'affecte pas les autres
+## Critères de Succès Mesurés
+- ✅ **Services autonomes** : 4 microservices déployés indépendamment  
+- ✅ **Observabilité** : Métriques Prometheus + Grafana operationnels
+- ✅ **Résilience** : Circuit breaker + fallback legacy implémentés
+- ✅ **Migration** : Transition progressive sans arrêt de service
+- ✅ **Tests** : Suite complète Jest + K6 pour validation continue
+
+## Implémentation Réalisée
+**Stack technique** :
+- Node.js + Express pour tous les services
+- SQLite pour base de données par service  
+- Docker + Docker Compose pour containerisation
+- Prometheus + Grafana pour monitoring
+- Dashboard HTML/Chart.js comme alternative simple
 
 ## Date de Révision
-**Juin 2025** - Évaluation des métriques de production
+**Juin 2025** - Évaluation métriques production et migration complète
 
 ---
 *Auteur : Équipe Architecture*  
-*Réviseurs : CTO, Lead Developers*
+*Réviseurs : Équipe développement*

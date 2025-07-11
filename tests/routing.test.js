@@ -6,7 +6,7 @@
 const request = require('supertest');
 
 describe('Tests de Routage Intelligent', () => {
-  const hybridRouterURL = 'http://localhost:9000';
+  const hybridRouterURL = 'http://localhost:3000';
   const kongGatewayURL = 'http://localhost:8001';
 
   describe('Routage par Console - POS', () => {

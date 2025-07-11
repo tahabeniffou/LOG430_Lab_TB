@@ -14,7 +14,7 @@ describe('Tests de Santé des Services', () => {
     'Produit Service 3': 'http://localhost:3006',
     'Stock Service': 'http://localhost:3007',
     'Reporting Service': 'http://localhost:3008',
-    'Hybrid Router': 'http://localhost:9000',
+    'Hybrid Router': 'http://localhost:3000',
     'Load Balancer': 'http://localhost:8000',
     'Kong Gateway': 'http://localhost:8001'
   };

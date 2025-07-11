@@ -37,7 +37,7 @@ const routingDecisionCounter = new promClient.Counter({
 });
 
 const app = express();
-const PORT = process.env.PORT || 9000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(helmet());
@@ -78,15 +78,15 @@ app.use((req, res, next) => {
 const SERVICES = {
   // Système de base (monolithique)
   legacy: {
-    url: process.env.LEGACY_SYSTEM_URL || 'http://localhost:3000',
+    url: process.env.LEGACY_SYSTEM_URL || 'http://localhost:3030',
     name: 'Système de Base'
   },
   // Microservices
   microservices: {
     produit: process.env.PRODUIT_SERVICE_URL || 'http://localhost:3001',
-    vente: process.env.VENTE_SERVICE_URL || 'http://localhost:3004',
+    vente: process.env.VENTE_SERVICE_URL || 'http://localhost:3003',
     stock: process.env.STOCK_SERVICE_URL || 'http://localhost:3002',
-    reporting: process.env.REPORTING_SERVICE_URL || 'http://localhost:3005'
+    reporting: process.env.REPORTING_SERVICE_URL || 'http://localhost:3004'
   }
 };
 
@@ -167,8 +167,11 @@ app.use((req, res, next) => {
 
 app.all('/pos/produits*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.produit}${req.path.replace('/pos/produits', '/produits')}`;
+    const targetUrl = `${SERVICES.microservices.produit}${req.path.replace('/pos/produits', '/api/produits')}`;
     console.log(`📺 POS -> Produit Microservice: ${targetUrl}`);
+    console.log(`🔍 Original path: ${req.path}`);
+    console.log(`🔍 Target URL: ${targetUrl}`);
+    console.log(`🔍 Method: ${req.method}`);
     
     const response = await axios({
       method: req.method,
@@ -179,7 +182,9 @@ app.all('/pos/produits*', async (req, res) => {
     
     res.status(response.status).json(response.data);
   } catch (error) {
-    console.error('Erreur POS produits:', error.message);
+    console.error('❌ Erreur POS produits:', error.message);
+    console.error('❌ Error details:', error.response?.status, error.response?.statusText);
+    console.error('❌ Error data:', error.response?.data);
     res.status(error.response?.status || 500).json({
       error: 'Erreur produits POS',
       message: error.message
@@ -253,6 +258,30 @@ app.all('/pos/reports*', async (req, res) => {
   }
 });
 
+// Route catch-all pour POS - routes vers le système de base
+app.all('/pos/*', async (req, res) => {
+  try {
+    // Remplacer /pos par /api/v1 pour router vers le système de base
+    const targetUrl = `${SERVICES.legacy.url}${req.path.replace('/pos', '/api/v1')}`;
+    console.log(`📺 POS -> Legacy System: ${targetUrl}`);
+    
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: { ...req.headers, 'x-source': 'pos-console' }
+    });
+    
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error('Erreur POS legacy:', error.message);
+    res.status(error.response?.status || 500).json({
+      error: 'Erreur système POS',
+      message: error.message
+    });
+  }
+});
+
 // === ROUTES POUR MAISON MÈRE ===
 // Maison mère utilise le système de base, sauf pour les rapports avancés
 
@@ -318,6 +347,30 @@ app.all('/maisonmere/ventes*', async (req, res) => {
     console.error('Erreur Maison Mère ventes:', error.message);
     res.status(error.response?.status || 500).json({
       error: 'Erreur ventes Maison Mère',
+      message: error.message
+    });
+  }
+});
+
+// Route catch-all pour Maison Mère - routes vers le système de base
+app.all('/maisonmere/*', async (req, res) => {
+  try {
+    // Remplacer /maisonmere par /api/v1 pour router vers le système de base
+    const targetUrl = `${SERVICES.legacy.url}${req.path.replace('/maisonmere', '/api/v1')}`;
+    console.log(`🏢 Maison Mère -> Legacy System: ${targetUrl}`);
+    
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: { ...req.headers, 'x-source': 'maisonmere-console' }
+    });
+    
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error('Erreur Maison Mère legacy:', error.message);
+    res.status(error.response?.status || 500).json({
+      error: 'Erreur système Maison Mère',
       message: error.message
     });
   }

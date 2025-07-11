@@ -8,32 +8,34 @@ actor "Gestionnaire Stock" as manager
 actor "Analyste Métier" as analyst
 actor "Administrateur" as admin
 
-rectangle "Système E-Commerce" {
+rectangle "Système Point de Vente (POS)" {
   usecase "Consulter Catalogue" as UC1
-  usecase "Passer Commande" as UC2
+  usecase "Traiter Vente" as UC2
   usecase "Gérer Stock" as UC3
   usecase "Analyser Ventes" as UC4
   usecase "Administrer Système" as UC5
   usecase "Générer Rapports" as UC6
-  usecase "Synchroniser Legacy" as UC7
+  usecase "Console POS" as UC7
+  usecase "Console Maison Mère" as UC8
 }
 
 rectangle "Système Legacy" as legacy
 
-client --> UC1 : consulte
-client --> UC2 : commande
+client --> UC1 : consulte catalogue
+client --> UC2 : effectue achat
 
-manager --> UC3 : gère
-manager --> UC6 : génère
+manager --> UC3 : gère stock
+manager --> UC7 : utilise console POS
 
 analyst --> UC4 : analyse
-analyst --> UC6 : consulte
+analyst --> UC6 : génère rapports
+analyst --> UC8 : console admin
 
 admin --> UC5 : administre
-admin --> UC7 : synchronise
+admin --> UC8 : console maison mère
 
-UC3 --> legacy : lit/écrit
-UC7 --> legacy : synchronise
+UC7 --> legacy : interface vendeur
+UC8 --> legacy : interface admin
 
 note right of UC1
   - Rechercher produits
