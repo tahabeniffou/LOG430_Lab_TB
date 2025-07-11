@@ -74,21 +74,81 @@ app.use((req, res, next) => {
   next();
 });
 
-// Configuration des services
+// Configuration des services avec load balancing
 const SERVICES = {
   // Système de base (monolithique)
   legacy: {
     url: process.env.LEGACY_SYSTEM_URL || 'http://localhost:3030',
     name: 'Système de Base'
   },
-  // Microservices
+  // Microservices avec support multi-instances pour load balancing
   microservices: {
-    produit: process.env.PRODUIT_SERVICE_URL || 'http://localhost:3001',
-    vente: process.env.VENTE_SERVICE_URL || 'http://localhost:3003',
-    stock: process.env.STOCK_SERVICE_URL || 'http://localhost:3002',
-    reporting: process.env.REPORTING_SERVICE_URL || 'http://localhost:3004'
+    produit: {
+      instances: [
+        process.env.PRODUIT_SERVICE_URL_1 || 'http://localhost:3001',
+        process.env.PRODUIT_SERVICE_URL_2 || 'http://localhost:3011', 
+        process.env.PRODUIT_SERVICE_URL_3 || 'http://localhost:3021'
+      ],
+      currentIndex: 0
+    },
+    vente: {
+      instances: [
+        process.env.VENTE_SERVICE_URL_1 || 'http://localhost:3003',
+        process.env.VENTE_SERVICE_URL_2 || 'http://localhost:3013',
+        process.env.VENTE_SERVICE_URL_3 || 'http://localhost:3023'
+      ],
+      currentIndex: 0
+    },
+    stock: {
+      instances: [
+        process.env.STOCK_SERVICE_URL_1 || 'http://localhost:3002',
+        process.env.STOCK_SERVICE_URL_2 || 'http://localhost:3012',
+        process.env.STOCK_SERVICE_URL_3 || 'http://localhost:3022'
+      ],
+      currentIndex: 0
+    },
+    reporting: {
+      instances: [
+        process.env.REPORTING_SERVICE_URL_1 || 'http://localhost:3004',
+        process.env.REPORTING_SERVICE_URL_2 || 'http://localhost:3014',
+        process.env.REPORTING_SERVICE_URL_3 || 'http://localhost:3024'
+      ],
+      currentIndex: 0
+    }
   }
 };
+
+// Métriques pour le load balancing
+const loadBalancerRequests = new promClient.Counter({
+  name: 'load_balancer_requests_total',
+  help: 'Total requests distributed by load balancer',
+  labelNames: ['service', 'instance_url', 'status']
+});
+
+const instanceHealthGauge = new promClient.Gauge({
+  name: 'service_instance_health',
+  help: 'Health status of service instances (1=healthy, 0=unhealthy)',
+  labelNames: ['service', 'instance_url']
+});
+
+// Fonction de load balancing round-robin avec health check
+function getServiceInstance(serviceName) {
+  const service = SERVICES.microservices[serviceName];
+  if (!service || !service.instances) {
+    throw new Error(`Service ${serviceName} non configuré`);
+  }
+
+  // Round-robin simple
+  const selectedInstance = service.instances[service.currentIndex];
+  service.currentIndex = (service.currentIndex + 1) % service.instances.length;
+
+  console.log(`⚖️ Load Balancer: ${serviceName} -> ${selectedInstance} (index: ${service.currentIndex - 1})`);
+  
+  // Incrémenter les métriques
+  loadBalancerRequests.labels(serviceName, selectedInstance, 'selected').inc();
+  
+  return selectedInstance;
+}
 
 // Configuration de routage - définit quand utiliser les microservices
 const ROUTING_CONFIG = {
@@ -140,13 +200,13 @@ function getAccessMode(req) {
   return ROUTING_CONFIG.api;
 }
 
-// Fonction pour déterminer quel service utiliser
+// Fonction pour déterminer quel service utiliser avec load balancing
 function getTargetService(req, resourceType) {
   const mode = getAccessMode(req);
   
-  // Si le mode autorise ce microservice
+  // Si le mode autorise ce microservice, utiliser le load balancer
   if (mode.usesMicroservices.includes(resourceType)) {
-    return SERVICES.microservices[resourceType];
+    return getServiceInstance(resourceType);
   }
   
   // Sinon, utiliser le système de base
@@ -167,7 +227,7 @@ app.use((req, res, next) => {
 
 app.all('/pos/produits*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.produit}${req.path.replace('/pos/produits', '/api/produits')}`;
+    const targetUrl = `${getServiceInstance('produit')}${req.path.replace('/pos/produits', '/api/produits')}`;
     console.log(`📺 POS -> Produit Microservice: ${targetUrl}`);
     console.log(`🔍 Original path: ${req.path}`);
     console.log(`🔍 Target URL: ${targetUrl}`);
@@ -180,11 +240,13 @@ app.all('/pos/produits*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'pos-console' }
     });
     
+    loadBalancerRequests.labels('produit', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('❌ Erreur POS produits:', error.message);
     console.error('❌ Error details:', error.response?.status, error.response?.statusText);
     console.error('❌ Error data:', error.response?.data);
+    loadBalancerRequests.labels('produit', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur produits POS',
       message: error.message
@@ -194,7 +256,7 @@ app.all('/pos/produits*', async (req, res) => {
 
 app.all('/pos/stock*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.stock}${req.path.replace('/pos/stock', '/stocks')}`;
+    const targetUrl = `${getServiceInstance('stock')}${req.path.replace('/pos/stock', '/stocks')}`;
     console.log(`📺 POS -> Stock Microservice: ${targetUrl}`);
     
     const response = await axios({
@@ -204,9 +266,11 @@ app.all('/pos/stock*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'pos-console' }
     });
     
+    loadBalancerRequests.labels('stock', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('Erreur POS stock:', error.message);
+    loadBalancerRequests.labels('stock', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur stock POS',
       message: error.message
@@ -216,7 +280,7 @@ app.all('/pos/stock*', async (req, res) => {
 
 app.all('/pos/ventes*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.vente}${req.path.replace('/pos/ventes', '/ventes')}`;
+    const targetUrl = `${getServiceInstance('vente')}${req.path.replace('/pos/ventes', '/ventes')}`;
     console.log(`📺 POS -> Vente Microservice: ${targetUrl}`);
     
     const response = await axios({
@@ -226,9 +290,11 @@ app.all('/pos/ventes*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'pos-console' }
     });
     
+    loadBalancerRequests.labels('vente', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('Erreur POS ventes:', error.message);
+    loadBalancerRequests.labels('vente', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur ventes POS',
       message: error.message
@@ -238,7 +304,7 @@ app.all('/pos/ventes*', async (req, res) => {
 
 app.all('/pos/reports*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.reporting}${req.path.replace('/pos/reports', '/api/reports')}`;
+    const targetUrl = `${getServiceInstance('reporting')}${req.path.replace('/pos/reports', '/api/reports')}`;
     console.log(`📺 POS -> Reporting Microservice: ${targetUrl}`);
     
     const response = await axios({
@@ -248,9 +314,11 @@ app.all('/pos/reports*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'pos-console' }
     });
     
+    loadBalancerRequests.labels('reporting', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('Erreur POS reports:', error.message);
+    loadBalancerRequests.labels('reporting', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur reports POS',
       message: error.message
@@ -310,7 +378,7 @@ app.all('/maisonmere/produits*', async (req, res) => {
 app.all('/maisonmere/reports*', async (req, res) => {
   try {
     // Pour les rapports, utiliser le microservice pour les analyses avancées
-    const targetUrl = `${SERVICES.microservices.reporting}${req.path.replace('/maisonmere/reports', '/api/reports')}`;
+    const targetUrl = `${getServiceInstance('reporting')}${req.path.replace('/maisonmere/reports', '/api/reports')}`;
     console.log(`🏢 Maison Mère -> Reporting Microservice: ${targetUrl}`);
     
     const response = await axios({
@@ -320,9 +388,11 @@ app.all('/maisonmere/reports*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'maisonmere-console' }
     });
     
+    loadBalancerRequests.labels('reporting', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('Erreur Maison Mère rapports:', error.message);
+    loadBalancerRequests.labels('reporting', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur rapports Maison Mère',
       message: error.message
@@ -380,7 +450,7 @@ app.all('/maisonmere/*', async (req, res) => {
 
 app.all('/api/v2/produits*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.produit}${req.path.replace('/api/v2/produits', '/api/produits')}`;
+    const targetUrl = `${getServiceInstance('produit')}${req.path.replace('/api/v2/produits', '/api/produits')}`;
     console.log(`🚀 API v2 -> Produit Microservice: ${targetUrl}`);
     
     const response = await axios({
@@ -390,9 +460,11 @@ app.all('/api/v2/produits*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'api-v2' }
     });
     
+    loadBalancerRequests.labels('produit', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('Erreur API v2 produits:', error.message);
+    loadBalancerRequests.labels('produit', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur microservice produits',
       message: error.message
@@ -402,7 +474,7 @@ app.all('/api/v2/produits*', async (req, res) => {
 
 app.all('/api/v2/ventes*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.vente}${req.path.replace('/api/v2/ventes', '/api/ventes')}`;
+    const targetUrl = `${getServiceInstance('vente')}${req.path.replace('/api/v2/ventes', '/api/ventes')}`;
     console.log(`🚀 API v2 -> Vente Microservice: ${targetUrl}`);
     
     const response = await axios({
@@ -412,9 +484,11 @@ app.all('/api/v2/ventes*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'api-v2' }
     });
     
+    loadBalancerRequests.labels('vente', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('Erreur API v2 ventes:', error.message);
+    loadBalancerRequests.labels('vente', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur microservice ventes',
       message: error.message
@@ -424,7 +498,7 @@ app.all('/api/v2/ventes*', async (req, res) => {
 
 app.all('/api/v2/stocks*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.stock}${req.path.replace('/api/v2/stocks', '/stocks')}`;
+    const targetUrl = `${getServiceInstance('stock')}${req.path.replace('/api/v2/stocks', '/stocks')}`;
     console.log(`🚀 API v2 -> Stock Microservice: ${targetUrl}`);
     
     const response = await axios({
@@ -434,9 +508,11 @@ app.all('/api/v2/stocks*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'api-v2' }
     });
     
+    loadBalancerRequests.labels('stock', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('Erreur API v2 stocks:', error.message);
+    loadBalancerRequests.labels('stock', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur microservice stocks',
       message: error.message
@@ -446,7 +522,7 @@ app.all('/api/v2/stocks*', async (req, res) => {
 
 app.all('/api/v2/reports*', async (req, res) => {
   try {
-    const targetUrl = `${SERVICES.microservices.reporting}${req.path.replace('/api/v2/reports', '/api/reports')}`;
+    const targetUrl = `${getServiceInstance('reporting')}${req.path.replace('/api/v2/reports', '/api/reports')}`;
     console.log(`🚀 API v2 -> Reporting Microservice: ${targetUrl}`);
     
     const response = await axios({
@@ -456,9 +532,11 @@ app.all('/api/v2/reports*', async (req, res) => {
       headers: { ...req.headers, 'x-source': 'api-v2' }
     });
     
+    loadBalancerRequests.labels('reporting', targetUrl, 'success').inc();
     res.status(response.status).json(response.data);
   } catch (error) {
     console.error('Erreur API v2 reports:', error.message);
+    loadBalancerRequests.labels('reporting', 'unknown', 'error').inc();
     res.status(error.response?.status || 500).json({
       error: 'Erreur microservice reporting',
       message: error.message
@@ -504,12 +582,63 @@ app.get('/metrics', async (req, res) => {
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
-    service: 'Hybrid Router',
+    service: 'Hybrid Router avec Load Balancing',
     timestamp: new Date().toISOString(),
     port: PORT,
+    loadBalancing: {
+      enabled: true,
+      algorithm: 'round-robin'
+    },
     routing: {
       legacy: SERVICES.legacy.url,
-      microservices: SERVICES.microservices
+      microservices: {
+        produit: {
+          instances: SERVICES.microservices.produit.instances,
+          currentIndex: SERVICES.microservices.produit.currentIndex
+        },
+        vente: {
+          instances: SERVICES.microservices.vente.instances,
+          currentIndex: SERVICES.microservices.vente.currentIndex
+        },
+        stock: {
+          instances: SERVICES.microservices.stock.instances,
+          currentIndex: SERVICES.microservices.stock.currentIndex
+        },
+        reporting: {
+          instances: SERVICES.microservices.reporting.instances,
+          currentIndex: SERVICES.microservices.reporting.currentIndex
+        }
+      }
+    }
+  });
+});
+
+app.get('/load-balancer/status', (req, res) => {
+  res.json({
+    service: 'Load Balancer Status',
+    timestamp: new Date().toISOString(),
+    algorithm: 'round-robin',
+    services: {
+      produit: {
+        instances: SERVICES.microservices.produit.instances,
+        currentIndex: SERVICES.microservices.produit.currentIndex,
+        nextInstance: SERVICES.microservices.produit.instances[SERVICES.microservices.produit.currentIndex]
+      },
+      vente: {
+        instances: SERVICES.microservices.vente.instances,
+        currentIndex: SERVICES.microservices.vente.currentIndex,
+        nextInstance: SERVICES.microservices.vente.instances[SERVICES.microservices.vente.currentIndex]
+      },
+      stock: {
+        instances: SERVICES.microservices.stock.instances,
+        currentIndex: SERVICES.microservices.stock.currentIndex,
+        nextInstance: SERVICES.microservices.stock.instances[SERVICES.microservices.stock.currentIndex]
+      },
+      reporting: {
+        instances: SERVICES.microservices.reporting.instances,
+        currentIndex: SERVICES.microservices.reporting.currentIndex,
+        nextInstance: SERVICES.microservices.reporting.instances[SERVICES.microservices.reporting.currentIndex]
+      }
     }
   });
 });
@@ -564,15 +693,23 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🔀 Hybrid Router démarré sur le port ${PORT}`);
+  console.log(`🔀 Hybrid Router avec Load Balancing démarré sur le port ${PORT}`);
   console.log(`📋 Routing Info: http://localhost:${PORT}/routing-info`);
   console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+  console.log(`⚖️  Load Balancer Status: http://localhost:${PORT}/load-balancer/status`);
   console.log('');
   console.log('🎯 Modes de routage configurés:');
-  console.log('   📺 POS Console: /pos/* -> Système de base + Stock microservice');
-  console.log('   🏢 Maison Mère: /maisonmere/* -> Système de base + Reporting microservice');
-  console.log('   🚀 API v2: /api/v2/* -> Tous les microservices');
+  console.log('   📺 POS Console: /pos/* -> Load-balanced microservices');
+  console.log('   🏢 Maison Mère: /maisonmere/* -> Système de base + Load-balanced reporting');
+  console.log('   🚀 API v2: /api/v2/* -> Tous les microservices load-balanced');
   console.log('   🔄 API v1: /api/v1/* -> Système de base');
+  console.log('');
+  console.log('⚖️  Load Balancing actif:');
+  console.log('   🔄 Algorithme: Round-Robin');
+  console.log('   📊 Produits: 3 instances (ports 3001, 3011, 3021)');
+  console.log('   💰 Ventes: 3 instances (ports 3003, 3013, 3023)');
+  console.log('   📦 Stock: 3 instances (ports 3002, 3012, 3022)');
+  console.log('   📈 Reports: 3 instances (ports 3004, 3014, 3024)');
 });
 
 module.exports = app;

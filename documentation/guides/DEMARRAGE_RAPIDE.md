@@ -1,83 +1,71 @@
-# 🚀 Guide de Démarrage Rapide
+# 🚀 Démarrage Rapide (5 minutes)
 
-Ce guide vous permet de démarrer le système POS microservices en 5 minutes.
-
-## ⚡ Installation Express
-
-### Prérequis
-- Node.js v16+ installé
-- Git installé
-- Terminal/PowerShell
-
-### Étapes (2 commandes)
+## ⚡ Installation
 
 ```bash
-# 1. Cloner et naviguer
+# 1. Cloner
 git clone <repository-url>
 cd LOG430_Lab_TB
 
-# 2. Démarrer le système complet (installe et démarre)
-node tools/start-all-services.js
+# 2. Démarrer (installe automatiquement)
+npm run start:all
 ```
 
-## 🎯 Vérification Rapide
+## ✅ Validation
 
-### 1. Tester la Santé du Système
 ```bash
-node tools/test-system.js
+# Vérifier que tout fonctionne
+npm run test:system
 ```
 
-**Sortie attendue :**
+**Résultat attendu :**
 ```
-✅ Hybrid Router (3000): OK
-✅ Produit Service (3001): OK
+✅ API Gateway (3000): OK
+✅ Produit Service (3001): OK  
 ✅ Stock Service (3002): OK
 ✅ Vente Service (3003): OK
 ✅ Reporting Service (3004): OK
-✅ Legacy App (3030): OK
 ```
 
-### 2. Tester les APIs
-
-**Test API Gateway :**
-```bash
-curl http://localhost:3000/health
-# Réponse : {"status":"healthy","services":{...}}
-```
-
-## 🌐 Accès aux Services
+## 🌐 Accès
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| **API Gateway** | http://localhost:3000/health | État global du système |
-| **Produits API** | http://localhost:3000/api/products | API via gateway |
-| **Stock API** | http://localhost:3000/api/stock | API via gateway |
-| **Ventes API** | http://localhost:3000/api/sales | API via gateway |
-| **Reports API** | http://localhost:3000/api/reports | API via gateway |
-| **Dashboard HTML** | Ouvrir `dashboard-standalone.html` | Dashboard simple |
-| **Métriques** | http://localhost:3000/metrics | Métriques Prometheus |
+| **Dashboard** | `dashboard-standalone.html` | Monitoring simple |
+| **API Gateway** | http://localhost:3000/health | État du système |
+| **Métriques** | http://localhost:3000/metrics | Prometheus |
+| **Load Balancer** | http://localhost:3000/load-balancer/status | Répartition de charge |
 
-### URLs Directes (Dev seulement)
-| Service | URL Directe | Port |
-|---------|-------------|------|
-| Produit Service | http://localhost:3001/health | 3001 |
-| Stock Service | http://localhost:3002/health | 3002 |
-| Vente Service | http://localhost:3003/health | 3003 |
-| Reporting Service | http://localhost:3004/health | 3004 |
-| Legacy App | http://localhost:3030/ | 3030 |
+## 🚀 Load Balancing (Optionnel)
 
-## 🧪 Tests et Monitoring
-
-### Tests de Performance
 ```bash
-# Test de charge K6 basique
-k6 run tests/k6-load-test.js
+# Démarrer avec 3 instances par service (12 microservices)
+npm run start:load-balancing
 
-# Test de charge avancé
-k6 run tests/k6-load-test-advanced.js
+# Tester la distribution
+npm run test:load-balancing
+```
 
-# Test de stress avec monitoring
-node tools/stress-test.js
+## 🧪 Tests
+
+```bash
+# Tests unitaires
+npm test
+
+# Tests de performance
+npm run test:load
+
+# Monitoring temps réel
+npm run monitoring
+```
+
+## 🛑 Arrêt
+
+**Ctrl+C** dans le terminal ou fermer la fenêtre.
+
+---
+
+**C'est tout !** Le système est opérationnel avec architecture microservices, load balancing et monitoring.
 ```
 
 ### Démarrer le Monitoring

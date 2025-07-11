@@ -7,7 +7,9 @@ Ce dossier contient les outils et utilitaires pour la gestion du système micros
 | Outil | Description | Usage |
 |-------|-------------|-------|
 | `start-all-services.js` | Démarrage automatique de tous les services | `npm run start:all` |
+| `start-all-services-with-load-balancing.js` | **NOUVEAU** Démarrage avec load balancing | `npm run start:load-balancing` |
 | `test-system.js` | Tests de santé de tous les services | `npm run test:system` |
+| `test-load-balancing.js` | **NOUVEAU** Tests de distribution de charge | `npm run test:load-balancing` |
 | `monitoring-dashboard.js` | Dashboard de monitoring temps réel | `npm run monitoring` |
 | `start-monitoring.js` | **NOUVEAU** Grafana + Prometheus | `npm run monitoring:grafana` |
 
@@ -15,12 +17,34 @@ Ce dossier contient les outils et utilitaires pour la gestion du système micros
 
 ### Démarrage du Système Complet
 ```bash
+# Démarrage standard (1 instance par service)
 npm run start:all
+
+# Démarrage avec load balancing (3 instances par service) 
+npm run start:load-balancing
 ```
-- Démarre tous les microservices en parallèle
-- Démarre l'API Gateway
+
+**Démarrage standard** :
+- Démarre tous les microservices en parallèle (1 instance chacun)
+- Démarre l'API Gateway  
 - Effectue des health checks automatiques
 - Affiche les URLs de tous les services
+
+**Démarrage avec load balancing** :
+- Démarre **3 instances** de chaque microservice (12 services total)
+- Démarre l'API Gateway avec load balancer Round-Robin
+- Distribution automatique de charge entre instances
+- Métriques Prometheus détaillées par instance
+
+### Tests de Distribution de Charge
+```bash
+# Tests de load balancing
+npm run test:load-balancing
+```
+- Vérifie le statut du load balancer
+- Teste la distribution Round-Robin  
+- Analyse les métriques de répartition
+- Valide le comportement sur plusieurs endpoints
 
 ### Tests de Santé Système
 ```bash

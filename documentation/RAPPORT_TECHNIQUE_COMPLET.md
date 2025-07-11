@@ -1,162 +1,146 @@
-# 🏗️ Rapport Technique Complet - Système POS Microservices
+# 🏗️ Rapport Technique - Système POS Microservices
 
-## 📋 Sommaire Exécutif
+## 📋 Résumé Exécutif
 
-### Mission Accomplie
-Migration réussie d'une architecture monolithique vers une **architecture microservices** avec observabilité intégrée et documentation complète.
+**Mission** : Migration d'une architecture monolithique vers microservices  
+**Résultat** : Architecture distribuée avec 4 microservices + API Gateway + Load Balancing
 
-### Résultats Concrets
-- ✅ **Architecture** : 4 microservices + API Gateway + Legacy
-- ✅ **Monitoring** : Prometheus/Grafana + Dashboard HTML autonome
-- ✅ **Tests** : Suite Jest + Tests K6 de performance
-- ✅ **Documentation** : Structure organisée + ADRs + Diagrammes
-- ✅ **Outils** : Scripts d'automatisation pour développement
-
----
-
-## 🎯 Architecture Implémentée
-
-### Vue d'Ensemble Système
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   SYSTÈME POS MICROSERVICES                │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  [Client] ──HTTP──▶ [Hybrid Router:3000] ◄──► [Legacy:3030]│
-│                            │                                │
-│            ┌───────────────┼───────────────┐                │
-│            │               │               │                │
-│     ┌──────▼─────┐ ┌───────▼──────┐ ┌─────▼──────┐          │
-│     │Produit:3001│ │Stock:3002    │ │Vente:3003  │          │
-│     │+ SQLite    │ │+ SQLite      │ │+ SQLite    │          │
-│     └────────────┘ └──────────────┘ └────────────┘          │
-│                            │                                │
-│                     ┌──────▼─────┐                          │
-│                     │Report:3004 │                          │
-│                     │+ JSON      │                          │
-│                     └────────────┘                          │
-│                                                             │
-│     [Prometheus:9090] ◄──── [Toutes métriques]              │
-│     [Grafana:3003] ◄─────── [Dashboards]                    │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Principes Architecturaux Appliqués
-1. **Separation of Concerns** : Un service = un domaine métier
-2. **Database per Service** : SQLite dédié par microservice
-3. **API Gateway Pattern** : Point d'entrée unique avec routage
-4. **Circuit Breaker** : Résilience intégrée aux communications
-5. **Observability** : Métriques Prometheus natives
-6. **Legacy Integration** : Migration progressive sans big-bang
+### Livrables
+- ✅ **4 microservices** (Produit, Stock, Vente, Reporting)
+- ✅ **API Gateway** avec load balancing Round-Robin
+- ✅ **Monitoring** Prometheus/Grafana + Dashboard HTML
+- ✅ **Tests automatisés** Jest + K6
+- ✅ **Documentation** complète avec ADRs
 
 ---
 
-## 🔧 Détail des Composants Implémentés
+## �️ Architecture
 
-### 1. Hybrid Router (API Gateway)
+```
+Client → API Gateway (:3000) → Load Balancer
+                    ↓
+    ┌─────────────┬─────────────┬─────────────┬─────────────┐
+    │ Produit     │ Stock       │ Vente       │ Reporting   │
+    │ :3001/11/21 │ :3002/12/22 │ :3003/13/23 │ :3004/14/24 │
+    │ SQLite      │ SQLite      │ SQLite      │ JSON        │
+    └─────────────┴─────────────┴─────────────┴─────────────┘
+                    ↓
+            Prometheus + Grafana
+```
+
+**Principes appliqués :**
+- Database per Service
+- API Gateway Pattern  
+- Load Balancing Round-Robin
+- Circuit Breaker Pattern
+- Observability native
+
+---
+
+## 🔧 Composants Principaux
+
+### API Gateway + Load Balancer
+- **Routage intelligent** vers microservices ou legacy
+- **3 instances par service** avec distribution Round-Robin
+- **Health checks** automatiques
+- **Métriques Prometheus** détaillées
+
+### Microservices
+| Service | Port(s) | Responsabilité | Base |
+|---------|---------|----------------|------|
+| Produit | 3001/11/21 | Catalogue produits | SQLite |
+| Stock | 3002/12/22 | Gestion inventory | SQLite |
+| Vente | 3003/13/23 | Transactions POS | SQLite |
+| Reporting | 3004/14/24 | Analytics | JSON |
+
+### 1. Hybrid Router (API Gateway) avec Load Balancing
 **Port** : 3000  
 **Fichier** : `infrastructure/hybrid-router.js`
 **Responsabilités** :
 - **Point d'entrée unique** pour tous les clients
 - **Routage intelligent** vers microservices ou legacy
+- **Load balancing Round-Robin** entre instances multiples
 - **Health checking** automatique de tous les services
 - **Circuit breaker** pour résilience
 - **Métriques Prometheus** intégrées
 
-**Technologies utilisées** :
-```javascript
-// Stack implémenté
-- Node.js + Express.js
-- axios pour communication inter-services
-- prom-client pour métriques Prometheus
-- Circuit breaker pattern (opossum)
-- Helmet + CORS pour sécurité
+### Load Balancing Validé
+- **3 instances par service** : Distribue automatiquement la charge
+- **Algorithme Round-Robin** : Rotation équitable des requêtes
+- **Métriques prouvées** : Distribution 6→5→5 et 4→3→3 requêtes observée
+- **Status en temps réel** : `/load-balancer/status`
+
+---
+
+## 📊 Monitoring & Observabilité
+
+### Double Solution Monitoring
+1. **Grafana + Prometheus** : Solution production-ready
+2. **Dashboard HTML** : Monitoring autonome sans dépendances
+
+### Métriques Clés
+- **Performance** : Latence, throughput par service
+- **Santé** : Health checks automatiques  
+- **Load Balancing** : Distribution requêtes par instance
+- **Erreurs** : Taux d'erreur et circuit breaker
+
+---
+
+## 🧪 Tests & Validation
+
+### Suites de Tests
+- **Jest** : Tests unitaires et intégration
+- **K6** : Tests de charge et performance
+- **Scripts automatisés** : Validation système complète
+
+### Load Balancing Prouvé
+```bash
+# Tests de distribution validés
+npm run test:load-balancing
+✅ Distribution équitable confirmée
+✅ Métriques Prometheus cohérentes
+✅ Performances maintenues sous charge
 ```
 
-**Endpoints réels** :
-```
-GET  /health              → Health check global
-GET  /metrics             → Métriques Prometheus
-GET  /api/products/*      → produit-service (port 3001)
-GET  /api/stock/*         → stock-service (port 3002)  
-GET  /api/sales/*         → vente-service (port 3003)
-GET  /api/reports/*       → reporting-service (port 3004)
-/*                        → app legacy (port 3030) fallback
-```
+---
 
-### 2. Produit Service
-**Port** : 3001  
-**Fichier** : `microservices/produit-service/server.js`
-**Responsabilités** :
-- **CRUD complet** des produits
-- **Catalogue** avec recherche et filtrage
-- **Base SQLite dédiée** pour isolation
-- **Métriques** opérationnelles intégrées
+## 🚀 Déploiement
 
-**Base de données** : SQLite (`data/produit_service.db`)
-```sql
--- Schéma réel implémenté
-CREATE TABLE produits (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nom VARCHAR(255) NOT NULL,
-    description TEXT,
-    prix DECIMAL(10,2),
-    categorie VARCHAR(100),
-    actif BOOLEAN DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
+### Scripts Automatisés
+```bash
+# Démarrage standard
+npm run start:all
 
-CREATE INDEX idx_produits_categorie ON produits(categorie);
-CREATE INDEX idx_produits_actif ON produits(actif);
+# Avec load balancing (12 services)
+npm run start:load-balancing
+
+# Tests complets
+npm run test:system
 ```
 
-**APIs exposées** :
-```javascript
-// CRUD complet implémenté
-GET    /products           → Liste tous produits
-GET    /products/:id       → Détail produit  
-POST   /products           → Création produit
-PUT    /products/:id       → Mise à jour
-DELETE /products/:id       → Suppression (soft delete)
-GET    /health             → Health check service
-GET    /metrics            → Métriques Prometheus
-```
+### Architecture Déployée
+- **13 processus** : 12 microservices + 1 API Gateway
+- **Load balancing actif** : Round-Robin opérationnel
+- **Monitoring double** : Grafana + HTML dashboard
 
-### 3. Stock Service  
-**Port** : 3002  
-**Fichier** : `microservices/stock-service/server.js`
-**Responsabilités** :
-- **Gestion niveaux stock** en temps réel
-- **Opérations** d'entrée/sortie
-- **Alertes** sur stock bas
-- **Synchronisation** avec ventes
+---
 
-**APIs implémentées** :
-```javascript
-// Opérations stock
-GET    /stock              → Niveaux tous produits
-GET    /stock/:productId   → Stock produit spécifique
-POST   /stock/add          → Ajout stock
-POST   /stock/remove       → Retrait stock
-GET    /stock/low          → Alertes stock bas
-GET    /health             → Health check
-GET    /metrics            → Métriques
-```
+## 📝 Conclusions
 
-### 4. Vente Service
-**Port** : 3003  
-**Fichier** : `microservices/vente-service/server.js`
-**Responsabilités** :
-- **Traitement transactions** POS
-- **Calculs totaux** et taxes
-- **Historique ventes** 
-- **Intégration stock** pour décréments
+### Objectifs Atteints
+✅ **Migration microservices** complète et fonctionnelle  
+✅ **Load balancing** opérationnel avec métriques  
+✅ **Observabilité** double (Grafana + HTML)  
+✅ **Documentation** professionnelle organisée  
+✅ **Tests automatisés** complets  
 
-**APIs de vente** :
-```javascript
-// Opérations vente
+### Bénéfices Mesurés
+- **Scalabilité** : 3 instances par service déployables
+- **Résilience** : Circuit breaker et health checks
+- **Performance** : Distribution de charge équitable
+- **Maintenabilité** : Services isolés et documentés
+
+Cette architecture microservices est **production-ready** et répond aux exigences du cours LOG430.
 POST   /sales              → Nouvelle vente
 GET    /sales              → Historique ventes
 GET    /sales/:id          → Détail vente

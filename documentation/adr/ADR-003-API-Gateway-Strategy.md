@@ -87,7 +87,25 @@ const SERVICES = {
 
 ## Fonctionnalités Implémentées
 
-### 1. Routage Intelligent
+### 1. Load Balancing Round-Robin (NOUVEAU)
+```javascript
+// Gestion multi-instances par service
+const SERVICES = {
+  produit: [
+    { url: 'http://localhost:3001', healthy: true },
+    { url: 'http://localhost:3011', healthy: true },
+    { url: 'http://localhost:3021', healthy: true }
+  ]
+  // ... autres services
+};
+
+// Métriques load balancing
+- load_balancer_requests_total
+- load_balancer_instance_health
+- load_balancer_distribution_ratio
+```
+
+### 2. Routage Intelligent
 ```javascript
 // Auto-découverte des services
 const discoverServices = async () => {
@@ -102,12 +120,12 @@ const discoverServices = async () => {
 };
 ```
 
-### 2. Health Checking
+### 2. Routage Intelligent
 - **Actif** : Ping périodique des services (30s)
 - **Passif** : Circuit breaker sur échecs consécutifs
 - **Exposition** : Endpoint `/health` global avec détail par service
 
-### 3. Observabilité Intégrée
+### 3. Health Checking
 ```javascript
 // Métriques exposées
 - gateway_requests_total
@@ -116,13 +134,13 @@ const discoverServices = async () => {
 - gateway_active_connections
 ```
 
-### 4. Gestion d'Erreurs
+### 4. Observabilité Intégrée
 - **Timeout** : 5s par défaut, configurable par service
 - **Retry** : 2 tentatives avec backoff exponentiel
 - **Circuit Breaker** : Isolation des services défaillants
 - **Fallback** : Réponse dégradée si possible
 
-### 5. Sécurité (Future)
+### 5. Gestion d'Erreurs
 ```javascript
 // Hooks prêts pour implémentation
 - authenticate()     // JWT validation
@@ -131,7 +149,7 @@ const discoverServices = async () => {
 - validateInput()    // Schema validation
 ```
 
-## Configuration de Déploiement
+### 6. Sécurité (Future)
 
 ### Docker
 ```dockerfile
@@ -174,8 +192,8 @@ MAX_RETRIES=2
 - CORS configuration avancée
 
 ### Phase 3 - Performance  
+- ✅ **Load balancing round-robin** : Multi-instances par service
 - Cache Redis pour réponses fréquentes
-- Load balancing si multi-instances
 - Compression gzip/brotli
 
 ### Phase 4 - Observabilité

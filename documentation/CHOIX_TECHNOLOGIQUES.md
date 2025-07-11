@@ -1,83 +1,100 @@
-# 🔧 Choix Technologiques - Système POS Microservices
+# 🔧 Choix Technologiques - Système POS
 
-## Vue d'Ensemble
+## Stack Principal
 
-Ce document présente les technologies réellement utilisées dans notre système POS microservices, avec les justifications pratiques de chaque choix basées sur l'implémentation effective.
-
----
-
-## 🏗️ Stack Technologique Implémentée
-
-### Runtime et Langage : Node.js + JavaScript
-**Justification** :
-- **Performance I/O** : Excellent pour les APIs REST et opérations asynchrones
-- **Écosystème riche** : NPM avec packages adaptés (Express, Sequelize, Prometheus)
-- **Simplicité** : Un seul langage pour tous les microservices
-- **Support JSON natif** : Parfait pour les APIs REST
-- **Rapidité de développement** : Prototypage et itération rapides
-
-### Framework Web : Express.js
-**Justification** :
-- **Simplicité** : API minimaliste et flexible
-- **Maturité** : Framework le plus utilisé pour Node.js
-- **Middleware** : Écosystème riche (helmet, cors, morgan)
-- **Performance** : Suffisante pour nos besoins de charge
-- **Debugging** : Outils et documentation excellents
+| Composant | Technologie | Justification |
+|-----------|-------------|---------------|
+| **Runtime** | Node.js + Express | Performance I/O, écosystème riche |
+| **Base de Données** | SQLite par service | Simplicité, pas de serveur externe |
+| **API Gateway** | Custom Express Router | Contrôle total, logique métier |
+| **Monitoring** | Prometheus + Grafana | Standard industrie, flexibilité |
+| **Conteneurisation** | Docker + Compose | Portabilité, reproductibilité |
+| **Tests** | Jest + K6 | Écosystème Node.js + performance |
 
 ---
 
-## 🗄️ Stockage des Données
+## 🗄️ Architecture des Données
 
-### Base de Données par Service
+### Database per Service Pattern
+- **Produit, Stock, Vente** : SQLite + Sequelize ORM
+- **Reporting** : JSON + agrégation en mémoire
+- **Isolation complète** : Aucune base partagée
 
-#### Produit Service : SQLite (avec Sequelize)
-**Implémentation actuelle** :
-- Fichier `produit_service.db` pour stockage local
-- ORM Sequelize pour abstraction SQL
-- Migrations automatiques au démarrage
-
-**Justification** :
-- **Simplicité** : Pas de serveur DB externe à gérer
-- **Performance** : Excellente pour lecture/écriture locale
-- **Portabilité** : Base embarquée avec l'application
-- **Development** : Démarrage rapide sans setup complexe
-
-#### Stock Service : SQLite
-**Implémentation similaire** avec fichier dédié pour isolation des données
-
-#### Vente Service : SQLite  
-**Cohérence** : Même approche pour tous les services transactionnels
-
-#### Reporting Service : JSON + Agrégation
-**Spécificité** : Données calculées et rapports en mémoire/fichier JSON
+**Avantages** :
+- Pas de serveur DB externe à gérer
+- Démarrage rapide en développement
+- Performance excellente pour les volumes POS
+- Migrations automatiques
 
 ---
 
-## 🌐 Routage et API Gateway
+## 🌐 API Gateway Custom
 
-### Hybrid Router (Custom)
-**Implémentation actuelle** : Router Express.js custom (`infrastructure/hybrid-router.js`)
+### Pourquoi pas Kong/Zuul/AWS ?
+Notre **Hybrid Router** custom offre :
+- **Logique métier POS** intégrée
+- **Load balancing Round-Robin** natif
+- **Circuit breaker** personnalisé
+- **Routage legacy/microservices** intelligent
+- **Métriques Prometheus** intégrées
 
-**Fonctionnalités** :
-- **Routage intelligent** : Redirection vers microservices appropriés
-- **Load balancing** : Distribution des requêtes
-- **Circuit breaker** : Protection contre défaillances services
-- **Health checks** : Monitoring automatique des services
-- **Métriques** : Intégration Prometheus native
-- **CORS** : Support multi-origine
-- **Sécurité** : Helmet pour headers sécurisés
-
-**Justification** :
-- **Contrôle total** : Logique métier spécifique au POS
-- **Simplicité** : Pas de complexité externe (Kong, Zuul)
-- **Performance** : Optimisé pour nos patterns d'usage
-- **Maintenance** : Code JavaScript cohérent avec services
+**Code JavaScript cohérent** avec les microservices.
 
 ---
 
-## 📦 Conteneurisation et Déploiement
+## 📊 Observabilité
 
-### Docker + Docker Compose
+### Double Approche
+1. **Prometheus + Grafana** : Production-ready
+2. **Dashboard HTML** : Autonome, sans dépendances
+
+### Pourquoi cette dualité ?
+- **Flexibilité** : Environnements avec/sans Docker
+- **Démonstration** : Comparatif des solutions
+- **Résilience** : Monitoring même si Grafana down
+
+---
+
+## 🧪 Tests
+
+### Jest + K6 Combinaison
+- **Jest** : Tests unitaires/intégration rapides
+- **K6** : Tests de charge JavaScript
+- **Scripts custom** : Tests de load balancing
+
+### Pourquoi pas Cypress/Selenium ?
+- **APIs REST** : Pas besoin d'UI testing
+- **Performance focus** : K6 excelle en charge
+- **Écosystème** : Cohérent avec Node.js
+
+---
+
+## 🚀 Choix Pragmatiques
+
+### SQLite vs PostgreSQL/MySQL
+✅ **SQLite choisi** pour :
+- Simplicité déploiement
+- Performance locale excellente
+- Pas de serveur à gérer
+- Portabilité maximale
+
+### Custom Gateway vs Kong
+✅ **Custom choisi** pour :
+- Contrôle total de la logique
+- Load balancing spécifique POS
+- Intégration metrics native
+- Maintenance simplifiée
+
+### Docker vs Kubernetes
+✅ **Docker Compose choisi** pour :
+- Simplicité pour le contexte académique
+- Démarrage rapide
+- Debugging facilité
+- Ressources limitées
+
+---
+
+Ces choix privilégient la **simplicité** et la **rapidité de développement** tout en conservant une architecture **production-viable** pour un système POS.
 **Implémentation actuelle** :
 - `Dockerfile` pour chaque microservice
 - `docker-compose.yml` pour orchestration locale

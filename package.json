@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node infrastructure/hybrid-router.js",
     "start:all": "node tools/start-all-services.js",
+    "start:load-balancing": "node tools/start-all-services-with-load-balancing.js",
     "start:legacy": "node app/app.js",
     "dev": "nodemon infrastructure/hybrid-router.js",
     "pos-console": "node src/interfaces/console/PosConsoleHttp.js",
@@ -22,6 +23,7 @@
     "test:performance": "jest tests/performance.test.js",
     "test:load": "k6 run tests/k6-load-test.js",
     "test:load:advanced": "k6 run tests/k6-load-test-advanced.js",
+    "test:load-balancing": "node tools/test-load-balancing.js",
     "monitoring": "node tools/monitoring-dashboard.js",
     "monitoring:grafana": "node tools/start-monitoring.js",
     "monitoring:stop": "node tools/start-monitoring.js stop",
