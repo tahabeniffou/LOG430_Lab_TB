@@ -1,32 +1,97 @@
-# 🏗️ Système POS Microservices - LOG430
+# 🏗️ Systè## 🚀 Démarrage Express
 
-Système de point de vente (POS) avec architecture microservices, API Gateway, load balancing et monitoring complet.
-
-## 🚀 Démarrage Express
-
+### 🐒 Kong API Gateway (Recommandé)
 ```bash
-# Démarrage standard (1 instance par service)
-npm run start:all
+# 🔧 Installation des dépendances
+npm run install:all
 
-# Avec load balancing (3 instances par service)
-npm run start:load-balancing
+# 📊 Initialisation de la base de données
+npm run db:seed
 
-# Tests du système
-npm run test:system
+# 🚀 Démarrage Kong + microservices (2 instances chacun)
+npm run start:kong:full
+
+# � Démarrage monitoring Prometheus + Grafana
+npm run monitoring:kong:start
+
+# �🖥️ Démarrage des consoles (dans des terminaux séparés)
+npm run start:pos    # Console POS
+npm run start:mere   # Console Maison Mère
+
+# ✅ Validation Kong avec load balancing
+npm run validate:kong
+npm run validate:monitoring
 ```
 
-## 📋 Services
+### 🔧 Mode Développement (Hybrid Router)
+```bash
+# 🚀 Démarrage standard (1 instance par service)
+npm run start:all
 
-| Service | Port(s) | Description |
-|---------|---------|-------------|
-| **API Gateway** | 3000 | Routage + Load Balancing |
-| **Produit** | 3001/11/21 | Catalogue produits |
-| **Stock** | 3002/12/22 | Gestion inventory |
-| **Vente** | 3003/13/23 | Transactions POS |
-| **Reporting** | 3004/14/24 | Analytics |
+# 🖥️ Consoles
+npm run start:pos    # Console POS  
+npm run start:mere   # Console Maison Mère
+
+# ✅ Validation système
+npm run validate:extraction
+```s - LOG430
+
+Système de point de vente (POS) avec architecture microservices hybride, API Gateway, load balancing et monitoring complet.
+
+## 🎯 Architecture Hybride
+
+Ce projet utilise une **architecture hybride** combinant :
+- 🧩 **Microservices** pour les fonctionnalités métier critiques (produits, ventes, stock, reporting)
+- 🏛️ **Système Legacy** pour les fonctionnalités support (utilisateurs, magasins, configuration)
+- � **API Gateway** pour l'orchestration et le routage intelligent
+
+## �🚀 Démarrage Express
+
+```bash
+# 🔧 Installation des dépendances
+npm run install:all
+
+# 📊 Initialisation de la base de données
+npm run db:seed
+
+# 🚀 Démarrage complet (microservices + API Gateway)
+npm run start:all
+
+# 🖥️ Démarrage des consoles (dans des terminaux séparés)
+npm run start:pos    # Console POS
+npm run start:mere   # Console Maison Mère
+
+# ✅ Validation de l'extraction
+npm run validate:extraction
+```
+
+## 📋 Services et Ports
+
+| Service | Port(s) | Description | Type |
+|---------|---------|-------------|------|
+| **API Gateway** | 9000 | Routage + Load Balancing | Infrastructure |
+| **Produit Service** | 3001/11/21 | Catalogue produits | Microservice |
+| **Stock Service** | 3002/12/22 | Gestion inventory | Microservice |
+| **Vente Service** | 3004/14/24 | Transactions POS | Microservice |
+| **Reporting Service** | 3005/15/25 | Analytics | Microservice |
+| **Legacy System** | 3030 | Utilisateurs, Magasins | Monolithe |
 
 ## 🏗️ Architecture
 
+### 🐒 Kong API Gateway (Production)
+```
+Client → Kong Proxy (:8000) → Round-Robin Load Balancer
+                    ↓
+    ┌─────────────┬─────────────┬─────────────┬─────────────┐
+    │ Produit     │ Stock       │ Vente       │ Reporting   │
+    │ :3001/3011  │ :3002/3012  │ :3004/3014  │ :3005/3015  │
+    │ SQLite      │ SQLite      │ SQLite      │ JSON        │
+    └─────────────┴─────────────┴─────────────┴─────────────┘
+                    ↓
+    Prometheus (:9090) → Grafana (:3030) + Kong Manager (:8002)
+```
+
+### 🔧 Hybrid Router (Développement)  
 ```
 Client → API Gateway (:3000) → Load Balancer Round-Robin
                     ↓
@@ -41,9 +106,17 @@ Client → API Gateway (:3000) → Load Balancer Round-Robin
 
 ## ✅ Fonctionnalités
 
-- **4 microservices** avec bases SQLite dédiées
-- **Load balancing** Round-Robin avec 3 instances par service
-- **API Gateway** intelligent avec circuit breaker
+### 🐒 Kong API Gateway
+- **2 instances** par microservice avec load balancing
+- **Kong Manager UI** pour configuration et monitoring
+- **Health checks** actifs et passifs
+- **Plugins** : CORS, Rate Limiting, Prometheus
+- **PostgreSQL** pour persistance configuration
+
+### 🔧 Hybrid Router  
+- **3 instances** par microservice (mode développement)
+- **Load balancing** Round-Robin avec circuit breaker
+- **API Gateway** intelligent avec failover
 - **Monitoring** Prometheus/Grafana + Dashboard HTML
 - **Tests automatisés** Jest + K6 + Load balancing
 # Démarrage et gestion
@@ -90,10 +163,14 @@ npm run test:load-balancing
 
 ## 📖 Documentation
 
+- **[Kong Setup](docs/Kong_Setup.md)** - 🐒 Configuration Kong API Gateway avec load balancing
+- **[Arc42 Architecture](docs/Arc42_Architecture_Document.md)** - 📐 Document d'architecture structuré
+- **[ADR](documentation/adr/)** - 🎯 Décisions d'architecture documentées
 - **[Démarrage Rapide](documentation/guides/DEMARRAGE_RAPIDE.md)** - Guide express 5 minutes
 - **[Guide Complet](documentation/guides/GUIDE_COMPLET.md)** - Documentation technique détaillée
 - **[Choix Technologiques](documentation/CHOIX_TECHNOLOGIQUES.md)** - Justifications techniques
 - **[Structure Projet](documentation/STRUCTURE_PROJET.md)** - Organisation et architecture
+- **[Collection Postman](tests/POS_Microservices_Kong.postman_collection.json)** - 🧪 Tests API complets
 - **[Index Documentation](documentation/INDEX.md)** - Navigation complète
 
 ## 🎯 Points d'Architecture Clés

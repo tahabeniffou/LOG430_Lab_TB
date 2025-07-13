@@ -10,6 +10,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Produit.hasMany(models.LigneVente, { foreignKey: 'produitId', as: 'lignesDeVente' });
       Produit.belongsTo(models.Magasin, { foreignKey: 'magasinId', as: 'magasin' });
+      Produit.belongsTo(models.Categorie, { foreignKey: 'categorieId', as: 'categorie' });
     }
   }
 
@@ -32,6 +33,10 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 0
     },
     magasinId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    categorieId: {
       type: DataTypes.INTEGER,
       allowNull: false
     }

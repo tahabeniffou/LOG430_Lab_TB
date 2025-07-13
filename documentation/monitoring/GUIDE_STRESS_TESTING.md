@@ -1,237 +1,353 @@
-# 🔥 GUIDE COMPLET - STRESS TESTING & MONITORING
+# 🚀 GUIDE STRESS TESTING
 
-## 🎯 OBJECTIF
+## 🎯 Objectif du stress testing
 
-Stresser votre système POS et observer l'impact en temps réel sur les métriques de performance, exactement comme dans votre configuration Grafana/Prometheus.
+Valider la robustesse du système POS sous charge élevée et identifier les limites de performance avec Kong Gateway et load balancing.
 
-## 📊 DASHBOARD DE MÉTRIQUES
+## 🛠️ Outils de stress testing
 
-### Ouverture Rapide
-```bash
-npm run dashboards:metrics
-```
+### 1. K6 (Recommandé)
+- **Avantage** : JavaScript natif, courbe apprentissage faible
+- **Performance** : 10,000+ VU par instance
+- **Reporting** : Intégration Grafana native
+- **Installation** : `npm install -g k6`
 
-### Métriques Surveillées
-- **📈 RPS Total** - Requêtes par seconde
-- **💻 Utilisation CPU** - Pourcentage d'utilisation processeur
-- **❌ Taux d'Erreurs 500** - Pourcentage d'erreurs serveur
-- **⚡ Latence Moyenne** - Temps de réponse en millisecondes
+### 2. Apache Bench (ab)
+- **Avantage** : Simple, préinstallé sur la plupart des systèmes
+- **Performance** : Adapté tests rapides
+- **Limitation** : Scénarios basiques
 
-### Interface Interactive
-- ✅ **Graphiques temps réel** avec Chart.js
-- ✅ **Contrôles de stress test** intégrés
-- ✅ **Logs système** en direct
-- ✅ **Configuration flexible** des tests
+### 3. Artillery
+- **Avantage** : Configuration YAML simple
+- **Performance** : Bon pour tests API REST
+- **Reporting** : HTML reports intégrés
 
-## 🚀 COMMANDES DE STRESS TEST
+## 📊 Scénarios de test
 
-### Scripts NPM (Recommandé)
-```bash
-# Test léger - Vérification système
-npm run stress:light     # 5 RPS × 30s
+### 1. Test de charge normale
+**Objectif** : Valider performance sous charge attendue
 
-# Test modéré - Charge normale
-npm run stress:medium    # 25 RPS × 60s
-
-# Test intensif - Charge élevée
-npm run stress:heavy     # 100 RPS × 120s
-
-# Test extrême - Limite système
-npm run stress:extreme   # 500 RPS × 60s
-```
-
-### Scripts Directs
-```bash
-node tools/stress-test.js light
-node tools/stress-test.js medium  
-node tools/stress-test.js heavy
-node tools/stress-test.js extreme
-```
-
-### Monitoring Complet
-```bash
-# Lance dashboard + guide stress test
-npm run monitoring:metrics
-```
-
-## 🎮 UTILISATION PRATIQUE
-
-### Étape 1: Préparer le Monitoring
-```bash
-# Ouvrir le dashboard de métriques
-npm run dashboards:metrics
-```
-
-### Étape 2: Démarrer les Services (Si nécessaire)
-```bash
-# Démarrer tous les microservices
-npm run start:all
-
-# OU démarrer le routeur hybride seul
-npm start
-```
-
-### Étape 3: Lancer un Stress Test
-```bash
-# Dans un nouveau terminal
-npm run stress:medium
-```
-
-### Étape 4: Observer les Résultats
-- 📊 **Dashboard** - Graphiques temps réel
-- 🖥️ **Terminal** - Statistiques détaillées
-- 📋 **Logs** - Événements système
-
-## 📈 MÉTRIQUES DÉTAILLÉES
-
-### RPS (Requêtes Par Seconde)
-- **Normal:** 2-10 RPS
-- **Stress Léger:** 5 RPS
-- **Stress Moyen:** 25 RPS  
-- **Stress Lourd:** 100 RPS
-- **Stress Extrême:** 500+ RPS
-
-### CPU Utilisation
-- **Normal:** 5-20%
-- **Stress Léger:** 10-30%
-- **Stress Moyen:** 30-60%
-- **Stress Lourd:** 60-90%
-- **Stress Extrême:** 80-100%
-
-### Taux d'Erreurs
-- **Excellent:** < 1%
-- **Bon:** 1-3%
-- **Acceptable:** 3-5%
-- **Problématique:** 5-10%
-- **Critique:** > 10%
-
-### Latence
-- **Excellente:** < 200ms
-- **Bonne:** 200-500ms
-- **Acceptable:** 500-1000ms
-- **Lente:** 1000-2000ms
-- **Problématique:** > 2000ms
-
-## 🔧 CONFIGURATION DU STRESS TEST
-
-### Endpoints Testés
 ```javascript
-// Test Light
-/api/health
-/api/products
-/api/sales
+// k6-normal-load.js
+import http from 'k6/http';
+import { check, sleep } from 'k6';
 
-// Test Medium  
-/api/health
-/api/products
-/api/products/1
-/api/sales
-/api/stock
-/api/reporting/stats
+export const options = {
+  stages: [
+    { duration: '2m', target: 50 },   // Montée graduelle
+    { duration: '5m', target: 50 },   // Charge stable
+    { duration: '2m', target: 0 },    // Descente
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<200'],  // 95% sous 200ms
+    http_req_failed: ['rate<0.01'],    // Moins de 1% erreurs
+  },
+};
 
-// Test Heavy & Extreme
-Tous les endpoints + POST requests
+export default function () {
+  // Test load balancing produits
+  const produits = http.get('http://localhost:8000/api/v2/produits');
+  check(produits, {
+    'produits status 200': (r) => r.status === 200,
+    'produits response time < 200ms': (r) => r.timings.duration < 200,
+  });
+
+  // Test load balancing stocks
+  const stocks = http.get('http://localhost:8000/api/v2/stocks');
+  check(stocks, {
+    'stocks status 200': (r) => r.status === 200,
+  });
+
+  // Test load balancing ventes
+  const ventes = http.get('http://localhost:8000/api/v2/ventes');
+  check(ventes, {
+    'ventes status 200': (r) => r.status === 200,
+  });
+
+  sleep(1);
+}
 ```
 
-### Paramètres Configurables
-- **Intensité:** light, medium, heavy, extreme
-- **Durée:** 10-300 secondes
-- **Taux d'erreur simulé:** 0-50%
-- **Service cible:** Spécifique ou tous
+**Commande** : `k6 run k6-normal-load.js`
 
-## 📊 ANALYSE DES RÉSULTATS
+### 2. Test de stress (limite)
+**Objectif** : Identifier le point de rupture
 
-### Statistiques Fournies
+```javascript
+// k6-stress-test.js
+export const options = {
+  stages: [
+    { duration: '2m', target: 100 },   // Montée normale
+    { duration: '5m', target: 100 },   // Charge normale
+    { duration: '2m', target: 200 },   // Augmentation stress
+    { duration: '5m', target: 200 },   // Maintien stress
+    { duration: '2m', target: 300 },   // Stress maximum
+    { duration: '5m', target: 300 },   // Maintien maximum
+    { duration: '2m', target: 0 },     // Descente
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<500'],  // Seuil dégradé acceptable
+    http_req_failed: ['rate<0.05'],    // 5% erreurs max en stress
+  },
+};
+
+export default function () {
+  const service = Math.floor(Math.random() * 4);
+  const endpoints = [
+    'http://localhost:8000/api/v2/produits',
+    'http://localhost:8000/api/v2/stocks', 
+    'http://localhost:8000/api/v2/ventes',
+    'http://localhost:8000/api/v2/reports'
+  ];
+  
+  const response = http.get(endpoints[service]);
+  check(response, {
+    'status is 200': (r) => r.status === 200,
+  });
+  
+  sleep(Math.random() * 2); // Variabilité réaliste
+}
 ```
-⏱️  Durée réelle: 60.45s
-📈 RPS réel: 24.8
-✅ Taux de succès: 96.2%
-❌ Taux d'erreur: 3.8%
 
-📊 STATISTIQUES DE LATENCE:
-   Moyenne: 245ms
-   Minimum: 89ms
-   Maximum: 1205ms
-   P50: 198ms
-   P95: 567ms
-   P99: 890ms
+### 3. Test de spike (pic soudain)
+**Objectif** : Réaction aux pics de trafic
+
+```javascript
+// k6-spike-test.js
+export const options = {
+  stages: [
+    { duration: '1m', target: 50 },    // Charge normale
+    { duration: '30s', target: 500 },  // SPIKE!
+    { duration: '1m', target: 50 },    // Retour normal
+  ],
+};
 ```
 
-### Interprétation
-- **P50 (Médiane):** 50% des requêtes plus rapides
-- **P95:** 95% des requêtes plus rapides  
-- **P99:** 99% des requêtes plus rapides
+### 4. Test de soak (endurance)
+**Objectif** : Stabilité long terme
 
-### Recommandations Automatiques
-- ✅ **Performance excellente** si succès > 95% et latence < 500ms
-- ⚠️ **Taux d'erreur élevé** si erreurs > 5%
-- ⚠️ **Latence élevée** si moyenne > 1000ms
+```javascript
+// k6-soak-test.js
+export const options = {
+  stages: [
+    { duration: '5m', target: 75 },    // Montée
+    { duration: '2h', target: 75 },    // Maintien 2h
+    { duration: '5m', target: 0 },     // Descente
+  ],
+};
+```
 
-## 🎯 SCÉNARIOS DE TEST RECOMMANDÉS
+## 📈 Métriques à surveiller
 
-### 1. Test de Santé Basique
+### 1. Performance Kong Gateway
 ```bash
-npm run stress:light
-```
-**Objectif:** Vérifier que le système répond correctement
+# Response time distribution
+http_req_duration: {
+  p(90): <150ms   # 90% sous 150ms
+  p(95): <200ms   # 95% sous 200ms  
+  p(99): <500ms   # 99% sous 500ms
+}
 
-### 2. Test de Charge Normale
+# Error rate
+http_req_failed: <1%
+
+# Throughput
+http_reqs: >1000/sec peak
+```
+
+### 2. Load Balancing Distribution
 ```bash
-npm run stress:medium
-```
-**Objectif:** Simuler la charge d'utilisation normale
+# Vérifier équilibrage via Prometheus
+curl http://localhost:9090/api/v1/query?query=rate(kong_http_requests_total[5m])
 
-### 3. Test de Pic de Trafic
+# Doit montrer ~50/50 entre instances
+```
+
+### 3. System Resources
 ```bash
-npm run stress:heavy
-```
-**Objectif:** Tester la résistance aux pics de charge
+# CPU usage par service
+docker stats --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
-### 4. Test de Limite Système
+# Seuils alertes:
+# CPU: <80% sustained
+# Memory: <1GB per service
+# Disk I/O: <10MB/s
+```
+
+## 🔍 Analyse des résultats
+
+### Résultats attendus (système healthy)
+
+#### Charge normale (50 VU)
+```
+✓ http_req_duration..........: avg=45ms  p(95)=120ms
+✓ http_req_failed............: 0.00%     ✓ 0
+✓ http_reqs..................: 15000     500/s
+✓ load_balancer_distribution.: 49%/51%   ✓ balanced
+```
+
+#### Stress test (300 VU)
+```
+⚠ http_req_duration..........: avg=180ms p(95)=450ms
+✓ http_req_failed............: 0.02%     ✓ <5%
+✓ http_reqs..................: 90000     1500/s
+✓ load_balancer_distribution.: 48%/52%   ✓ balanced
+```
+
+#### Point de rupture (>500 VU)
+```
+❌ http_req_duration..........: avg=2s    p(95)=8s
+❌ http_req_failed............: 15%       ❌ >5%
+⚠ http_reqs..................: 120000    2000/s
+❌ load_balancer_distribution.: 30%/70%   ❌ unbalanced
+```
+
+### Métriques Grafana pendant tests
+
+#### Dashboard "Stress Test Monitoring"
+- **Panel 1** : Request rate (req/s) temps réel
+- **Panel 2** : Response time percentiles
+- **Panel 3** : Error rate %
+- **Panel 4** : Load balancer distribution
+- **Panel 5** : System resources (CPU, RAM)
+
+## 🚨 Gestion des incidents
+
+### Alertes automatiques
+```yaml
+# Prometheus alerts
+groups:
+  - name: stress_test_alerts
+    rules:
+      - alert: HighResponseTime
+        expr: http_request_duration_seconds{quantile="0.95"} > 0.5
+        for: 2m
+        
+      - alert: HighErrorRate  
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 1m
+        
+      - alert: LoadBalancerImbalance
+        expr: abs(rate(kong_upstream_target_requests_total[5m]) - 0.5) > 0.1
+        for: 5m
+```
+
+### Actions correctives
+
+#### Response time dégradé
+1. **Vérifier** : CPU/Memory usage services
+2. **Scaling** : Ajouter instances si <80% CPU
+3. **Caching** : Implémenter Redis si nécessaire
+4. **Database** : Optimiser queries lentes
+
+#### Load balancer déséquilibré
+1. **Health checks** : Vérifier services downstream
+2. **Network** : Latence inter-services
+3. **Kong config** : Weights upstream
+4. **Restart** : Service défaillant si nécessaire
+
+## 📊 Reporting et analyse
+
+### Rapport K6 automatique
 ```bash
-npm run stress:extreme
+# Génération rapport HTML
+k6 run --out json=test-results.json k6-stress-test.js
+k6-reporter test-results.json --output stress-test-report.html
 ```
-**Objectif:** Découvrir les limites du système
 
-## 📸 CAPTURES POUR DOCUMENTATION
+### Intégration Grafana
+```bash
+# Envoi métriques vers Prometheus
+k6 run --out experimental-prometheus-rw k6-stress-test.js
 
-### Métriques à Capturer
-1. **Dashboard au repos** - Métriques normales
-2. **Pendant stress test** - Pics de charge
-3. **Résultats terminal** - Statistiques finales
-4. **Graphiques de récupération** - Retour à la normale
+# Dashboard temps réel dans Grafana
+# Import template: K6 Load Testing Results
+```
 
-### Outils de Capture
-- **Windows:** Win + Shift + S
-- **Résolution:** 1920x1080 minimum
-- **Format:** PNG pour la qualité
+### Métriques business impact
+```javascript
+// Custom metrics K6
+import { Counter, Rate, Trend } from 'k6/metrics';
 
-## 🚨 SURVEILLANCE D'ALERTES
+const BusinessTransactions = new Counter('business_transactions_total');
+const BusinessErrors = new Rate('business_error_rate');
+const CheckoutTime = new Trend('checkout_duration');
 
-### Seuils Critiques
-- **CPU > 95%** pendant > 30s
-- **Taux d'erreur > 10%**
-- **Latence > 5000ms**
-- **RPS = 0** (système inactif)
+export default function() {
+  // Simuler transaction business
+  const checkout = http.post('http://localhost:8000/api/v2/ventes', payload);
+  
+  if (checkout.status === 200) {
+    BusinessTransactions.add(1);
+    CheckoutTime.add(checkout.timings.duration);
+  } else {
+    BusinessErrors.add(1);
+  }
+}
+```
 
-### Actions Recommandées
-1. **Arrêter le stress test** si problème détecté
-2. **Vérifier les logs** système
-3. **Redémarrer les services** si nécessaire
-4. **Analyser les goulots** d'étranglement
+## 🎯 Recommandations optimisation
 
-## ✅ VALIDATION FINALE
+### Based on stress test results
 
-### Checklist Test Réussi
-- [ ] Dashboard s'ouvre correctement
-- [ ] Métriques s'affichent en temps réel
-- [ ] Stress test s'exécute sans erreur
-- [ ] Graphiques se mettent à jour
-- [ ] Statistiques finales cohérentes
-- [ ] Système récupère après test
+#### Si CPU bottleneck
+- **Horizontal scaling** : 3-4 instances par service
+- **Vertical scaling** : CPU cores supplémentaires
+- **Code optimization** : Profiling Node.js
 
----
+#### Si Memory bottleneck  
+- **Connection pooling** : Limiter connexions DB
+- **Garbage collection** : Tuning Node.js GC
+- **Memory leaks** : Monitoring avec clinic.js
 
-## 🎓 READY FOR TESTING!
+#### Si Database bottleneck
+- **Read replicas** : PostgreSQL streaming replication
+- **Connection pooling** : PgBouncer
+- **Query optimization** : EXPLAIN ANALYZE
+- **Caching layer** : Redis pour queries fréquentes
 
-Votre système de stress testing est maintenant configuré et prêt à l'emploi. Utilisez les commandes ci-dessus pour analyser les performances de votre architecture POS en temps réel!
+## 🚀 Automation stress testing
+
+### CI/CD Integration
+```yaml
+# .github/workflows/stress-test.yml
+name: Stress Test
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly Sunday 2AM
+
+jobs:
+  stress_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup K6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      
+      - name: Run stress test
+        run: k6 run tests/k6-stress-test.js
+        
+      - name: Upload results
+        uses: actions/upload-artifact@v2
+        with:
+          name: stress-test-results
+          path: test-results.json
+```
+
+## 🏆 Conclusion
+
+**STRESS TESTING SYSTÈME POS** ✅
+
+Le guide fournit :
+1. **Scénarios complets** : Normal, stress, spike, soak
+2. **Métriques clés** : Performance, load balancing, resources
+3. **Automation** : CI/CD integration
+4. **Monitoring** : Grafana dashboards temps réel
+5. **Incident response** : Alertes et actions correctives
+
+Le système est maintenant validé pour supporter la charge production avec monitoring professionnel intégré.

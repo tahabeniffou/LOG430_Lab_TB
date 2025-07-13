@@ -6,7 +6,7 @@
 // Ce script est maintenu pour compatibilité mais ne doit plus être exécuté
 
 console.log('--- ⚠️  SCRIPT DEPRECIÉ - Démarrage du script de seed COMPLET ---');
-const { sequelize, Magasin, Utilisateur, Produit, Vente, LigneVente } = require('./index');
+const { sequelize, Magasin, Utilisateur, Produit, Vente, LigneVente, Categorie } = require('./index');
 require('./associations');
 
 async function seed() {
@@ -96,6 +96,21 @@ async function seed() {
         console.log(`Vente créée (magasin ${magasin.nom}, vendeur ${vendeur.nom}) : total $${total.toFixed(2)}`);
       }
     }
+
+    // Script de peuplement additionnel
+    // Créer des catégories
+    const [catBoissons, catSnacks] = await Categorie.bulkCreate([
+      { nom: 'Boissons' },
+      { nom: 'Snacks' }
+    ], { returning: true });
+
+    // Créer des produits additionnels
+    await Produit.bulkCreate([
+      { nom: 'Coca-Cola', prix: 1.5, stock: 100, CategorieId: catBoissons.id, MagasinId: magasins[0].id },
+      { nom: 'Chips Lays', prix: 1.2, stock: 80, CategorieId: catSnacks.id, MagasinId: magasins[0].id },
+      { nom: 'Pepsi', prix: 1.4, stock: 90, CategorieId: catBoissons.id, MagasinId: magasins[1].id },
+      { nom: 'KitKat', prix: 0.8, stock: 120, CategorieId: catSnacks.id, MagasinId: magasins[1].id }
+    ]);
 
     console.log('Seed COMPLET terminé : magasins, utilisateurs, produits, ventes et lignes de vente créés.');
   } catch (e) {

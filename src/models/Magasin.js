@@ -1,4 +1,5 @@
 const { Model, DataTypes } = require('sequelize');
+const sequelize = require('./index');
 
 module.exports = (sequelize, DataTypes) => {
   class Magasin extends Model {
@@ -13,11 +14,11 @@ module.exports = (sequelize, DataTypes) => {
   Magasin.init({
     nom: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      unique: true
     },
     adresse: {
-      type: DataTypes.STRING,
-      allowNull: false
+      type: DataTypes.STRING
     }
   }, {
     sequelize,

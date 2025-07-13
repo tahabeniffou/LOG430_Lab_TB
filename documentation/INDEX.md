@@ -1,75 +1,67 @@
-# 📚 Documentation Projet POS
+# 📚 INDEX DE LA DOCUMENTATION
 
-## 🎯 **Lecture Rapide**
+## 🎯 Vue d'ensemble du projet
 
-### **Essentiels (simplifiés)**
-- **[DEMARRAGE_RAPIDE.md](guides/DEMARRAGE_RAPIDE.md)** - Démarrage en 5 minutes ✅
-- **[CHOIX_TECHNOLOGIQUES.md](CHOIX_TECHNOLOGIQUES.md)** - Stack et justifications ✅  
-- **[RAPPORT_TECHNIQUE_COMPLET.md](RAPPORT_TECHNIQUE_COMPLET.md)** - Architecture complète ✅
+Ce projet implémente un système de Point de Vente (POS) moderne basé sur une architecture microservices avec Kong API Gateway pour le load balancing et la gestion des requêtes.
 
-### **Fonctionnalités Avancées**
-- **[GUIDE_LOAD_BALANCING.md](guides/GUIDE_LOAD_BALANCING.md)** - Load balancing multi-instances
-- **[VALIDATION_LOAD_BALANCING.md](validation/VALIDATION_LOAD_BALANCING.md)** - Preuves de fonctionnement
+## 📁 Structure de la documentation
 
-## 📁 **Par Catégorie**
+### 🏗️ Architecture
+- [Vue d'ensemble architecture](../docs/VueLogique.md)
+- [Vue d'implémentation](../docs/VueImplementation.md)
+- [Vue de déploiement](../docs/VueDeploiement.md)
+- [Analyse des besoins](../docs/Analyse_besoins.md)
 
-### � **Guides**
-- [DEMARRAGE_RAPIDE.md](guides/DEMARRAGE_RAPIDE.md) - Setup 5 minutes
-- [GUIDE_LOAD_BALANCING.md](guides/GUIDE_LOAD_BALANCING.md) - Load balancing
-- [GUIDE_COMPLET.md](guides/GUIDE_COMPLET.md) - Guide détaillé
+### 🔧 Validation et Tests
+- [Validation finale des dashboards](validation/VALIDATION_FINALE_DASHBOARDS.md)
+- [Validation du load balancing](validation/VALIDATION_LOAD_BALANCING.md)
+- [Validation de la documentation](validation/VALIDATION_DOCUMENTATION.md)
+- [Corrections de conformité](validation/CORRECTIONS_DOCUMENTATION_CONFORMITE.md)
 
-### ⚖️ **Décisions Architecture (ADR)**
-- [ADR-001-Migration-Microservices.md](adr/ADR-001-Migration-Microservices.md)
-- [ADR-002-Choix-Technologique.md](adr/ADR-002-Choix-Technologique.md)
-- [ADR-003-API-Gateway-Strategy.md](adr/ADR-003-API-Gateway-Strategy.md)
+### 📊 Monitoring et Performance
+- [Analyse performance Grafana](monitoring/ANALYSE_PERFORMANCE_GRAFANA.md)
+- [Comparaison Grafana vs HTML](monitoring/COMPARAISON_GRAFANA_HTML.md)
+- [Différences visuelles graphiques](monitoring/DIFFERENCES_VISUELLES_GRAPHIQUES.md)
+- [Guide stress testing](monitoring/GUIDE_STRESS_TESTING.md)
 
-### ✅ **Validation**
-- [VALIDATION_LOAD_BALANCING.md](validation/VALIDATION_LOAD_BALANCING.md)
-- [VALIDATION_FINALE_DASHBOARDS.md](validation/VALIDATION_FINALE_DASHBOARDS.md)
-- [SYNTHESE_SIMPLIFICATION.md](SYNTHESE_SIMPLIFICATION.md) ✅ Résumé des modifications
+### 📋 Architecture Decision Records (ADR)
+- [ADR-001: Architecture Microservices](adr/ADR-001-Architecture-Microservices.md)
+- [ADR-002: Kong API Gateway](adr/ADR-002-Kong-API-Gateway.md)  
+- [ADR-003: Load Balancing Strategy](adr/ADR-003-Load-Balancing-Strategy.md)
+- [ADR-004: Monitoring Prometheus + Grafana](adr/ADR-004-Monitoring-Prometheus-Grafana.md)
+- [ADR-005: Docker et Containerisation](adr/ADR-005-Docker-Containerisation.md)
+- [ADR-006: Documentation et Gouvernance](adr/ADR-006-Documentation-Gouvernance-Projet.md)
 
-### 📊 **Monitoring (simplifiés)**
-- [COMPARAISON_GRAFANA_HTML.md](monitoring/COMPARAISON_GRAFANA_HTML.md) ✅ Concis
-- [ANALYSE_PERFORMANCE_GRAFANA.md](ANALYSE_PERFORMANCE_GRAFANA.md) ✅ Allégé
+### 🚀 Déploiement
+- [Guide de déploiement simple](../DEPLOIEMENT.md)
+- [README principal](../README.md)
 
-## 🚀 **Parcours Recommandés**
+## 🎯 Points clés du système
 
-### **Pour Évaluation Rapide (15 min)**
-1. **[DEMARRAGE_RAPIDE.md](guides/DEMARRAGE_RAPIDE.md)** - Setup
-2. **[VALIDATION_LOAD_BALANCING.md](validation/VALIDATION_LOAD_BALANCING.md)** - Preuves
-3. **Dashboard HTML** - Démonstration visuelle
+### Architecture microservices
+- **4 microservices** : Produit, Stock, Vente, Reporting
+- **2 instances par service** pour la haute disponibilité
+- **Kong API Gateway** pour le load balancing Round-Robin
+- **PostgreSQL** comme base de données partagée
 
-### **Pour Analyse Technique (45 min)**
-1. [CHOIX_TECHNOLOGIQUES.md](CHOIX_TECHNOLOGIQUES.md) - Stack
-2. [RAPPORT_TECHNIQUE_COMPLET.md](RAPPORT_TECHNIQUE_COMPLET.md) - Architecture
-3. [ADRs](adr/) - Décisions
-4. Tests du système complet
+### Consoles d'interface
+- **Console POS** : Interface point de vente
+- **Console Maison Mère** : Interface de supervision centralisée
+- **Système Legacy** : Compatibilité avec l'ancien système
 
-### 👨‍💻 **Pour Développeur**
-1. [STRUCTURE_PROJET.md](STRUCTURE_PROJET.md) - Organisation code
-2. [RAPPORT_TECHNIQUE_COMPLET.md](RAPPORT_TECHNIQUE_COMPLET.md) - Détails techniques
-3. [GUIDE_COMPLET.md](guides/GUIDE_COMPLET.md) - Installation et utilisation
-4. [Diagrammes](diagrams/) - Architecture visuelle
+### Monitoring et observabilité
+- **Prometheus** : Collecte de métriques
+- **Grafana** : Visualisation des dashboards
+- **Kong Manager** : Interface d'administration Kong
+- **Health checks** : Surveillance automatique
 
-### 🧪 **Pour Test/QA**
-1. [GUIDE_STRESS_TESTING.md](monitoring/GUIDE_STRESS_TESTING.md) - Tests de charge
-2. [VALIDATION_FINALE_DASHBOARDS.md](validation/VALIDATION_FINALE_DASHBOARDS.md) - Validation
-3. [GUIDE_CAPTURES_DASHBOARDS.md](guides/GUIDE_CAPTURES_DASHBOARDS.md) - Captures
+## 🔗 Liens rapides
 
-### 🚀 **Pour Déploiement**
-1. [DEMARRAGE_RAPIDE.md](guides/DEMARRAGE_RAPIDE.md) - Setup rapide
-2. [GUIDE_DEPLOIEMENT_PRODUCTION.md](deployment/GUIDE_DEPLOIEMENT_PRODUCTION.md) - Production
-3. Configuration Docker et monitoring
+- [Démarrage rapide](../DEPLOIEMENT.md#déploiement-en-une-commande)
+- [Architecture détaillée](../docs/VueLogique.md)
+- [Tests et validation](validation/)
+- [Monitoring](monitoring/)
 
-## 📊 STATISTIQUES DOCUMENTATION
+## 📞 Support
 
-- **📄 Total documents :** 21 fichiers principaux
-- **🗂️ Dossiers organisés :** 7 catégories
-- **📊 Dashboards :** 5 interfaces fonctionnelles
-- **🛠️ Scripts :** 6 outils automatisés
-- **⚙️ Configurations :** 4 environnements
-
----
-
-**Dernière mise à jour :** Juillet 2025  
-**Version :** 2.0 - Documentation organisée et optimisée
+Pour toute question sur l'architecture ou l'implémentation, consultez les documents de validation qui contiennent les détails techniques complets.

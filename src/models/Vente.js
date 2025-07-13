@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     utilisateurId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: true // Peut être null si non tracé
     }
   }, {
     sequelize,
