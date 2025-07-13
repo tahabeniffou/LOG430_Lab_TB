@@ -1,0 +1,405 @@
+version: '3.8'
+
+networks:
+  kong-net:
+    driver: bridge
+  pos-network:
+    driver: bridge
+
+volumes:
+  kong_data:
+  postgres_data:
+
+services:
+  # === INFRASTRUCTURE KONG ===
+  kong-database:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: kong
+      POSTGRES_DB: kong
+    volumes:
+      - kong_data:/var/lib/postgresql/data
+    networks:
+      - kong-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kong-migrations:
+    image: kong:3.4
+    command: kong migrations bootstrap
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    networks:
+      - kong-net
+
+  kong:
+    image: kong:3.4
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-database
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    ports:
+      - "8000:8000"  # Kong Proxy (API Gateway)
+      - "8001:8001"  # Kong Admin API
+      - "8002:8002"  # Kong Manager UI
+    depends_on:
+      - kong-migrations
+    networks:
+      - kong-net
+      - pos-network
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  # === BASE DE DONNÉES COMMUNE ===
+  postgres-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: pos_system
+      POSTGRES_USER: pos_user
+      POSTGRES_PASSWORD: pos_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pos_user -d pos_system"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === MICROSERVICES - 2 INSTANCES CHACUN ===
+  
+  # Produit Service - Instance 1
+  produit-service-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: microservice
+        SERVICE_NAME: produit-service
+        PORT: 3001
+    environment:
+      - PORT=3001
+      - SERVICE_TYPE=microservice
+      - SERVICE_NAME=produit-service
+      - INSTANCE_ID=produit-1
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Produit Service - Instance 2
+  produit-service-2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: microservice
+        SERVICE_NAME: produit-service
+        PORT: 3011
+    environment:
+      - PORT=3011
+      - SERVICE_TYPE=microservice
+      - SERVICE_NAME=produit-service
+      - INSTANCE_ID=produit-2
+    ports:
+      - "3011:3011"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Stock Service - Instance 1
+  stock-service-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: microservice
+        SERVICE_NAME: stock-service
+        PORT: 3002
+    environment:
+      - PORT=3002
+      - SERVICE_TYPE=microservice
+      - SERVICE_NAME=stock-service
+      - INSTANCE_ID=stock-1
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Stock Service - Instance 2
+  stock-service-2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: microservice
+        SERVICE_NAME: stock-service
+        PORT: 3012
+    environment:
+      - PORT=3012
+      - SERVICE_TYPE=microservice
+      - SERVICE_NAME=stock-service
+      - INSTANCE_ID=stock-2
+    ports:
+      - "3012:3012"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Vente Service - Instance 1
+  vente-service-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: microservice
+        SERVICE_NAME: vente-service
+        PORT: 3003
+    environment:
+      - PORT=3003
+      - SERVICE_TYPE=microservice
+      - SERVICE_NAME=vente-service
+      - INSTANCE_ID=vente-1
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Vente Service - Instance 2
+  vente-service-2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: microservice
+        SERVICE_NAME: vente-service
+        PORT: 3013
+    environment:
+      - PORT=3013
+      - SERVICE_TYPE=microservice
+      - SERVICE_NAME=vente-service
+      - INSTANCE_ID=vente-2
+    ports:
+      - "3013:3013"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Reporting Service - Instance 1
+  reporting-service-1:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: microservice
+        SERVICE_NAME: reporting-service
+        PORT: 3004
+    environment:
+      - PORT=3004
+      - SERVICE_TYPE=microservice
+      - SERVICE_NAME=reporting-service
+      - INSTANCE_ID=reporting-1
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Reporting Service - Instance 2
+  reporting-service-2:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: microservice
+        SERVICE_NAME: reporting-service
+        PORT: 3014
+    environment:
+      - PORT=3014
+      - SERVICE_TYPE=microservice
+      - SERVICE_NAME=reporting-service
+      - INSTANCE_ID=reporting-2
+    ports:
+      - "3014:3014"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # === CONSOLES ===
+  console-pos:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: console-pos
+        PORT: 3100
+    environment:
+      - PORT=3100
+      - SERVICE_TYPE=console-pos
+      - API_GATEWAY_URL=http://kong:8000
+    ports:
+      - "3100:3100"
+    depends_on:
+      - kong
+    networks:
+      - pos-network
+
+  console-maisonmere:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: console-maisonmere
+        PORT: 3101
+    environment:
+      - PORT=3101
+      - SERVICE_TYPE=console-maisonmere
+      - API_GATEWAY_URL=http://kong:8000
+    ports:
+      - "3101:3101"
+    depends_on:
+      - kong
+    networks:
+      - pos-network
+
+  # === LEGACY SYSTEM ===
+  legacy-system:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_TYPE: legacy
+        PORT: 3200
+    environment:
+      - PORT=3200
+      - SERVICE_TYPE=legacy
+    ports:
+      - "3200:3200"
+    networks:
+      - pos-network
+
+  # === MONITORING ===
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus-kong.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - kong-net
+      - pos-network
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3030:3000"
+    volumes:
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - kong-net
+      - pos-network
+
+  # === CONFIGURATION KONG ===
+  kong-config:
+    image: curlimages/curl:latest
+    depends_on:
+      - kong
+    networks:
+      - kong-net
+      - pos-network
+    volumes:
+      - ./config/kong-config.sh:/kong-config.sh:ro
+    command: sh /kong-config.sh
