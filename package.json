@@ -5,7 +5,7 @@
   "description": "Système de caisse POS pour le cours LOG430",
   "main": "src/appConsole.js",
   "scripts": {
-    "start": "node infrastructure/hybrid-router.js",
+    "start": "docker-compose up -d",
     "start:kong": "docker-compose -f docker-compose.kong.yml up -d",
     "start:kong:logs": "docker-compose -f docker-compose.kong.yml logs -f",
     "stop:kong": "docker-compose -f docker-compose.kong.yml down",
@@ -15,7 +15,7 @@
     "start:pos": "node src/appConsole.js",
     "start:mere": "node src/maisonMereConsole.js",
     "start:api": "node src/api/servers.js",
-    "start:gateway": "node infrastructure/hybrid-router.js",
+    "start:gateway": "docker-compose up kong",
     "db:sync": "node -e \"require('./src/models').syncDatabase()\"",
     "db:seed": "node src/models/seed.js",
     "install:all": "npm install && cd microservices/produit-service && npm install && cd ../stock-service && npm install && cd ../vente-service && npm install && cd ../reporting-service && npm install && cd ../..",

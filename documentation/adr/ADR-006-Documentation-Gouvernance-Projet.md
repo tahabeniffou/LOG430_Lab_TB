@@ -1,13 +1,16 @@
-# ADR-006: Documentation et Gouvernance Projet
+# ADR-006: Documentation Projet
 
 ## Statut
-**Accepté** - 2024-12-15
+Accepté - 2024-12-15
 
 ## Contexte
-Un projet d'architecture microservices nécessite une documentation structurée pour :
-- Faciliter l'onboarding des nouveaux développeurs
-- Maintenir la cohérence architecturale dans le temps
-- Supporter l'évaluation académique (LOG430)
+Projet microservices nécessite documentation structurée :
+- Onboarding développeurs
+- Cohérence architecturale
+- Évaluation académique LOG430
+
+## Décision
+Documentation ADR et vues architecturales.
 - Assurer la maintenance et évolution future
 - Documenter les décisions techniques et leur rationale
 

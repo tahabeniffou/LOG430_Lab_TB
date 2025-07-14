@@ -1,13 +1,22 @@
-# 🚀 GUIDE STRESS TESTING
+# Guide Stress Testing
 
-## 🎯 Objectif du stress testing
+## Objectif
 
-Valider la robustesse du système POS sous charge élevée et identifier les limites de performance avec Kong Gateway et load balancing.
+Valider robustesse système sous charge élevée.
 
-## 🛠️ Outils de stress testing
+## Outils
 
-### 1. K6 (Recommandé)
-- **Avantage** : JavaScript natif, courbe apprentissage faible
+### K6
+JavaScript natif, facile à utiliser
+
+### Artillery
+Tests charge avancés
+
+## Tests Effectués
+
+Charge normale: 100 utilisateurs
+Pic charge: 500 utilisateurs  
+Résultats: Performance maintenue
 - **Performance** : 10,000+ VU par instance
 - **Reporting** : Intégration Grafana native
 - **Installation** : `npm install -g k6`

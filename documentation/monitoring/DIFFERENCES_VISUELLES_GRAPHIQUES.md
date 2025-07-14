@@ -1,12 +1,26 @@
-# 🎨 DIFFÉRENCES VISUELLES GRAPHIQUES
+# Différences Visuelles Graphiques
 
-## 🎯 Objectif de l'analyse
+## Objectif
 
-Analyser les différences visuelles entre les représentations graphiques dans Grafana vs les solutions alternatives pour le monitoring du système POS.
+Analyser différences visuelles entre graphiques.
 
-## 📊 Types de graphiques comparés
+## Types Graphiques
 
-### 1. Time Series (Séries temporelles)
+### Time Series
+Grafana: Courbes temps réel
+HTML: Graphiques statiques
+
+### Métriques
+Grafana: Gauges dynamiques  
+HTML: Valeurs texte
+
+### Alertes
+Grafana: Indicateurs visuels
+HTML: Aucune
+
+## Conclusion
+
+Grafana supérieur visuellement.
 
 #### Grafana Time Series
 ```

@@ -1,18 +1,30 @@
-# 📊 ANALYSE PERFORMANCE GRAFANA
+# Analyse Performance Grafana
 
-## 🎯 Objectif de l'analyse
+## Objectif
 
-Analyser les performances du système POS à travers les dashboards Grafana et identifier les métriques clés pour l'optimisation.
+Analyser performances système POS via Grafana.
 
-## 📈 Métriques analysées
+## Métriques Analysées
 
-### 1. Performance Kong Gateway
-**Dashboard** : Kong Gateway & Microservices Monitoring
+### Kong Gateway
+- Requests/second: 50-100 normal, pic 250
+- Response time: <200ms
+- Error rate: <1%
 
-#### Requests per Second
-- **Métrique** : `rate(kong_http_requests_total[5m])`
-- **Valeur normale** : 50-100 req/s
-- **Pic observé** : 250 req/s
+### Microservices
+- CPU usage: <70%
+- Memory: <512MB par service
+- Database connections: stable
+
+### Load Balancing
+- 2 instances par service
+- Distribution équitable
+- Failover automatique
+
+### Système
+- Health checks OK
+- Auto-scaling opérationnel
+- Monitoring temps réel
 - **Seuil alerte** : >500 req/s
 
 #### Response Time

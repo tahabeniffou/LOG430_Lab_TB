@@ -1,12 +1,26 @@
-# 🎨 COMPARAISON GRAFANA VS HTML
+# Comparaison Grafana vs HTML
 
-## 🎯 Objectif de la comparaison
+## Objectif
 
-Comparer l'efficacité des dashboards Grafana versus les interfaces HTML traditionnelles pour le monitoring du système POS.
+Comparer dashboards Grafana vs HTML.
 
-## 📊 Critères de comparaison
+## Critères
 
-### 1. Expérience utilisateur (UX)
+### Grafana
+- Temps réel
+- Alertes automatiques
+- Interface professionnelle
+- Intégration Prometheus
+
+### HTML
+- Statique
+- Pas d'alertes
+- Interface basique
+- Données limitées
+
+## Conclusion
+
+Grafana retenu pour monitoring production.
 
 #### Grafana 
 - ✅ **Interface moderne** : Design professionnel et cohérent

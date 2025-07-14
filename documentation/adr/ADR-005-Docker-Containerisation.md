@@ -1,13 +1,16 @@
-# ADR-005: Docker et Containerisation
+# ADR-005: Docker Containerisation
 
 ## Statut
-**Accepté** - 2024-12-15
+Accepté - 2024-12-15
 
 ## Contexte
-Le projet nécessite un déploiement consistent et reproductible pour :
+Déploiement consistent et reproductible :
 - Développement local uniforme
-- Tests automatisés en CI/CD
+- Tests automatisés CI/CD
 - Déploiement production simplifié
+
+## Décision
+Containerisation Docker pour tous services.
 - Isolation des services et dépendances
 - Support multi-environnement (dev, test, prod)
 

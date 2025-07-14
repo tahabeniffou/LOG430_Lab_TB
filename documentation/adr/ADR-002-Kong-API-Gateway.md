@@ -1,18 +1,17 @@
-# ADR-002: Choix de Kong comme API Gateway
+# ADR-002: Kong API Gateway
 
 ## Statut
-**Accepté** - 2024-12-15
+Accepté - 2024-12-15
 
 ## Contexte
-Avec l'architecture microservices, nous avons besoin d'un API Gateway pour :
-- Centraliser les accès aux microservices
-- Implémenter le load balancing
-- Gérer l'authentification et autorisation
-- Fournir monitoring et observabilité
+Besoin d'un gateway pour :
+- Centraliser accès microservices
+- Load balancing
+- Authentification
+- Monitoring
 
-## Options considérées
-
-### Kong Gateway
+## Décision
+Utilisation Kong Gateway sur port 8000.
 - **Avantages** : Performance élevée, plugins riches, monitoring intégré
 - **Inconvénients** : Courbe d'apprentissage, configuration complexe
 - **Licence** : Open Source + Enterprise options

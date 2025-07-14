@@ -1,22 +1,23 @@
-# 📚 INDEX DE LA DOCUMENTATION
+# Documentation LOG430 Lab TB
 
-## 🎯 Vue d'ensemble du projet
+## Projet
 
-Ce projet implémente un système de Point de Vente (POS) moderne basé sur une architecture microservices avec Kong API Gateway pour le load balancing et la gestion des requêtes.
+Système POS avec microservices et Kong Gateway.
 
-## 📁 Structure de la documentation
+## Architecture
 
-### 🏗️ Architecture
-- [Vue d'ensemble architecture](../docs/VueLogique.md)
-- [Vue d'implémentation](../docs/VueImplementation.md)
-- [Vue de déploiement](../docs/VueDeploiement.md)
-- [Analyse des besoins](../docs/Analyse_besoins.md)
+- appConsole.js (Legacy System POS)
+- maisonMereConsole.js (Console maison mère)
+- 4 microservices (produit, stock, vente, reporting) - 2 instances chacun
+- Kong Gateway (port 8000)
+- PostgreSQL
 
-### 🔧 Validation et Tests
-- [Validation finale des dashboards](validation/VALIDATION_FINALE_DASHBOARDS.md)
-- [Validation du load balancing](validation/VALIDATION_LOAD_BALANCING.md)
-- [Validation de la documentation](validation/VALIDATION_DOCUMENTATION.md)
-- [Corrections de conformité](validation/CORRECTIONS_DOCUMENTATION_CONFORMITE.md)
+## Validation
+
+- Tests automatisés (13/13)
+- Load balancing Kong validé
+- Monitoring opérationnel
+- Documentation conforme
 
 ### 📊 Monitoring et Performance
 - [Analyse performance Grafana](monitoring/ANALYSE_PERFORMANCE_GRAFANA.md)

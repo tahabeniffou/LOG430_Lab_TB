@@ -1,13 +1,16 @@
-# ADR-004: Stack de Monitoring Prometheus + Grafana
+# ADR-004: Monitoring Prometheus + Grafana
 
 ## Statut
-**Accepté** - 2024-12-15
+Accepté - 2024-12-15
 
 ## Contexte
-L'architecture microservices avec Kong Gateway nécessite une observabilité complète pour :
-- Surveiller la performance des 8 instances de microservices
-- Monitorer la distribution du load balancing
-- Alerter sur les anomalies et pannes
+Architecture microservices nécessite observabilité :
+- Performance instances microservices
+- Distribution load balancing
+- Alertes anomalies
+
+## Décision
+Stack Prometheus + Grafana pour monitoring.
 - Fournir des dashboards pour les équipes opérationnelles
 
 ## Options considérées

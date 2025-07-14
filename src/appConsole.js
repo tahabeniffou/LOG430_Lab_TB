@@ -10,7 +10,7 @@ let apiClient = null;
 
 // Initialisation du client API
 function initApiClient() {
-  const gatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:9000';
+  const gatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:8000';
   apiClient = new ApiClient(gatewayUrl);
   console.log(chalk.cyan(`🔗 Connexion à l'API Gateway: ${gatewayUrl}`));
 }

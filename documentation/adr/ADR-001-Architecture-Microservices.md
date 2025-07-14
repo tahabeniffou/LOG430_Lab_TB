@@ -1,18 +1,17 @@
-# ADR-001: Adoption de l'Architecture Microservices
+# ADR-001: Architecture Microservices
 
 ## Statut
-**Accepté** - 2024-12-15
+Accepté - 2024-12-15
 
 ## Contexte
-Le système POS legacy monolithique présente des limitations importantes :
-- Difficultés de maintenance et évolution
-- Couplage fort entre composants
-- Déploiement en bloc obligatoire
+Système POS legacy monolithique avec limitations :
+- Maintenance difficile
+- Couplage fort
+- Déploiement en bloc
 - Scalabilité limitée
-- Technologies obsolètes
 
 ## Décision
-Nous adoptons une architecture microservices pour remplacer le système monolithique.
+Adoption architecture microservices.
 
 ## Justification
 

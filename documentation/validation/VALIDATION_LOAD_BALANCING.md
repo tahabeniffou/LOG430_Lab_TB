@@ -1,18 +1,22 @@
-# ⚖️ VALIDATION DU LOAD BALANCING
+# Validation Load Balancing
 
-## 🎯 Objectif
+## Objectif
 
-Valider que le load balancing Kong fonctionne correctement avec une distribution équitable entre les 2 instances de chaque microservice.
+Valider load balancing avec distribution équitable entre instances.
 
-## 🏗️ Configuration testée
+## Configuration
 
-### Architecture load balancing
-- **Algorithm** : Round-Robin
-- **Instances par service** : 2
-- **Services** : Produit, Stock, Vente, Reporting
-- **Total instances** : 8 microservices
+### Architecture
+- Algorithme: Round-Robin
+- Instances par service: 2
+- Services: Produit, Stock, Vente, Reporting
+- Total: 8 instances microservices
 
-### Upstreams Kong configurés
+## Tests Effectués
+
+Distribution équitable validée sur tous services.
+Basculement automatique en cas panne.
+Performance maintenue sous charge.
 ```yaml
 produit-upstream:
   - produit-service-1:3001 (weight: 100)

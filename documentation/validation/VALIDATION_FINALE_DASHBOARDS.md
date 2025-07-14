@@ -1,18 +1,30 @@
-# 📊 VALIDATION FINALE DES DASHBOARDS
+# Validation Dashboards
 
-## 🎯 Objectif de la validation
+## Objectif
 
-Cette validation confirme que tous les dashboards et interfaces de monitoring sont opérationnels et répondent aux exigences du projet LOG430.
+Confirmer dashboards monitoring opérationnels.
 
-## ✅ Dashboards validés
+## Dashboards Validés
 
-### 1. Kong Manager (http://localhost:8002)
-- **Statut** : ✅ Opérationnel
-- **Fonctionnalités** :
-  - Vue d'ensemble des services
-  - Configuration des routes
-  - Gestion des upstreams
-  - Monitoring temps réel
+### Kong Gateway (port 8000)
+- Statut: Opérationnel
+- Routes configurées
+- Load balancing actif
+
+### Kong Manager (port 8002)
+- Interface administration
+- Gestion services
+- Configuration upstreams
+
+### Grafana (port 3000)
+- Dashboards métriques
+- Alertes configurées
+- Monitoring temps réel
+
+### Prometheus (port 9090)
+- Collecte métriques
+- Targets actifs
+- Données disponibles
 
 ### 2. Grafana (http://localhost:3030)
 - **Statut** : ✅ Opérationnel

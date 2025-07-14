@@ -1,13 +1,16 @@
-# ADR-003: Stratégie Load Balancing avec 2 Instances par Service
+# ADR-003: Load Balancing
 
 ## Statut
-**Accepté** - 2024-12-15
+Accepté - 2024-12-15
 
 ## Contexte
-Pour assurer la haute disponibilité et la performance du système POS, nous devons déterminer :
-- Le nombre d'instances par microservice
-- L'algorithme de répartition de charge
-- La stratégie de failover
+Assurer haute disponibilité et performance :
+- Instances par microservice
+- Algorithme répartition charge
+- Stratégie failover
+
+## Décision
+2 instances par service avec round-robin.
 
 ## Options considérées
 

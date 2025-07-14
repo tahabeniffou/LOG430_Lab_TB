@@ -1,22 +1,23 @@
-# 🔄 SYNTHÈSE SIMPLIFICATION
+# Synthèse Simplification
 
-## 🎯 Objectif de la simplification
+## Objectif
 
-Ce document trace les simplifications majeures apportées au projet pour optimiser le déploiement et la maintenance, tout en conservant toutes les fonctionnalités essentielles.
+Optimiser déploiement et maintenance.
 
-## 📋 Simplifications appliquées
+## Simplifications
 
-### 1. Dockerfiles consolidés
-**Avant** : 4 Dockerfiles séparés
-- `Dockerfile` (microservices)
-- `Dockerfile.console` (consoles)
-- `Dockerfile.legacy` (legacy system)
-- `Dockerfile.hybrid-router` (router)
+### Dockerfiles
+Avant: 4 Dockerfiles séparés
+Après: 1 Dockerfile universel
 
-**Après** : 1 Dockerfile universel ✅
-- Support tous composants via arguments
-- Script de démarrage intelligent
-- Configuration dynamique par variables
+### Scripts
+Consolidation des scripts déploiement VM
+
+### Documentation  
+Format simplifié et cohérent
+
+### Nettoyage
+Suppression fichiers obsolètes Windows
 
 **Bénéfices** :
 - 🔧 **Maintenance** : 1 seul fichier à maintenir
