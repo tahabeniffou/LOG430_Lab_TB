@@ -79,6 +79,16 @@ app.get('/api-docs/swagger.json', (req, res) => {
   res.json(swaggerSpec);
 });
 
+// Health check endpoint pour Docker et monitoring
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    service: process.env.SERVICE_NAME || 'unknown',
+    timestamp: new Date().toISOString(),
+    port: process.env.PORT || port
+  });
+});
+
 // 6) handler “catch-all” pour les 404
 app.use((req, res) => {
   res.status(404).json({

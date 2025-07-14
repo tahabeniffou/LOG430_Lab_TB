@@ -1,0 +1,118 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "LOG430 POS System - Microservices Dashboard",
+    "tags": ["microservices", "pos", "kong", "postgresql"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Kong Gateway Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"kong\"}",
+            "legendFormat": "Kong Status"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Microservices Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=~\"produit-service|stock-service|vente-service|reporting-service\"}",
+            "legendFormat": "{{job}} - {{instance}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Database Connections",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "up{job=~\"postgres-.*\"}",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Request Rate by Service",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{job}} - {{method}} {{status}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 5,
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "http_request_duration_seconds",
+            "legendFormat": "{{job}} - {{quantile}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "System Resource Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes",
+            "legendFormat": "{{job}} Memory"
+          },
+          {
+            "expr": "rate(process_cpu_seconds_total[5m])",
+            "legendFormat": "{{job}} CPU"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

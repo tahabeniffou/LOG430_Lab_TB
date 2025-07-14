@@ -1,9 +1,34 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const { httpRequestsTotal, httpRequestDuration, register } = require('./src/utils/metrics');
+const axios = require('axios');
+const promClient = require('prom-client');
 const createVenteRoutes = require('./src/api/routes');
 require('dotenv').config();
+
+// Configuration des métriques Prometheus
+const collectDefaultMetrics = promClient.collectDefaultMetrics;
+collectDefaultMetrics({ timeout: 5000 });
+
+// Métriques personnalisées
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code', 'service'],
+  buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10]
+});
+
+const httpRequestsTotal = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status_code', 'service']
+});
+
+const venteOperationsTotal = new promClient.Counter({
+  name: 'vente_operations_total',
+  help: 'Total number of vente operations',
+  labelNames: ['operation', 'service']
+});
 
 const app = express();
 const PORT = process.env.PORT || 3003;
@@ -13,9 +38,6 @@ const INSTANCE_NAME = process.env.INSTANCE_NAME || 'Vente Service Default';
 // Configuration des autres microservices
 const PRODUIT_SERVICE_URL = process.env.PRODUIT_SERVICE_URL || 'http://localhost:3001';
 const STOCK_SERVICE_URL = process.env.STOCK_SERVICE_URL || 'http://localhost:3002';
-
-// Variable globale pour le repository
-let venteRepository;
 
 // Middleware
 app.use(helmet());
@@ -50,21 +72,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Configuration des routes API après initialisation du repository
-function setupRoutes() {
-  if (!venteRepository) {
-    console.error('❌ Repository non initialisé - routes non montées');
-    return;
-  }
-  
-  // Utilisation du système de routes organisées
-  const apiRoutes = createVenteRoutes(venteRepository);
-  app.use('/api', apiRoutes);
-  
-  console.log('✅ Routes API Vente configurées');
-}
+// Repository en mémoire (en attendant la base de données)
+let venteRepository;
 
-// Repository en mémoire pour mode dégradé
 function initMockRepository() {
   const mockData = new Map();
   let nextId = 1;
@@ -120,14 +130,23 @@ function initMockRepository() {
     }
   };
   
-  console.log('✅ Repository en mémoire initialisé avec données de test.');
+  console.log('✅ Repository Vente en mémoire initialisé avec données de test.');
+}
+
+// Configuration des routes API
+function setupRoutes() {
+  // Utilisation du système de routes organisées
+  const apiRoutes = createVenteRoutes(venteRepository);
+  app.use('/api', apiRoutes);
+  
+  console.log('✅ Routes API Vente configurées');
 }
 
 // Route pour exposer les métriques Prometheus
 app.get('/metrics', async (req, res) => {
   try {
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
   } catch (ex) {
     res.status(500).end(ex);
   }

@@ -1,26 +1,32 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-
-// Test d'import du module metrics
-console.log('🔍 Tentative d\'import des métriques...');
-try {
-  const metricsModule = require('./src/utils/metrics');
-  console.log('✅ Module metrics importé:', Object.keys(metricsModule));
-  const { promClient, register, httpRequestsTotal, httpRequestDuration } = metricsModule;
-  console.log('✅ Métriques extraites:', { 
-    httpRequestsTotal: typeof httpRequestsTotal,
-    httpRequestDuration: typeof httpRequestDuration 
-  });
-} catch (error) {
-  console.error('❌ Erreur import metrics:', error.message);
-}
-const { promClient, register, httpRequestsTotal, httpRequestDuration } = require('./src/utils/metrics');
+const promClient = require('prom-client');
 require('dotenv').config();
 
 // Configuration des métriques Prometheus
 const collectDefaultMetrics = promClient.collectDefaultMetrics;
-collectDefaultMetrics({ timeout: 5000, register });
+collectDefaultMetrics({ timeout: 5000 });
+
+// Métriques personnalisées
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code', 'service'],
+  buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10]
+});
+
+const httpRequestsTotal = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status_code', 'service']
+});
+
+const dbOperationsTotal = new promClient.Counter({
+  name: 'db_operations_total',
+  help: 'Total number of database operations',
+  labelNames: ['operation', 'table', 'service']
+});
 
 // Import de la logique métier du microservice
 const Produit = require('./src/domain/Produit');
@@ -176,8 +182,8 @@ function setupRoutes() {
 // Route pour exposer les métriques Prometheus
 app.get('/metrics', async (req, res) => {
   try {
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
   } catch (ex) {
     res.status(500).end(ex);
   }

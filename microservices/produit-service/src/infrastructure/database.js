@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 
 // Configuration de la base de données spécifique au microservice produit
 const dbConfig = {
-  dialect: process.env.DB_DIALECT || 'sqlite',
+  dialect: process.env.DB_DIALECT || 'postgres',
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
     max: 10,
@@ -17,7 +17,16 @@ const dbConfig = {
 };
 
 // Configuration selon le dialecte
-if (process.env.DB_DIALECT === 'mysql') {
+if (process.env.DB_DIALECT === 'postgres' || !process.env.DB_DIALECT) {
+  // Configuration PostgreSQL (par défaut)
+  Object.assign(dbConfig, {
+    host: process.env.DB_HOST || 'postgres-produit',
+    port: process.env.DB_PORT || 5432,
+    username: process.env.DB_USER || 'produit_user',
+    password: process.env.DB_PASSWORD || 'produit_password',
+    database: process.env.DB_NAME || 'produit_service_db'
+  });
+} else if (process.env.DB_DIALECT === 'mysql') {
   // Configuration MySQL
   Object.assign(dbConfig, {
     host: process.env.DB_HOST || 'localhost',
@@ -26,9 +35,6 @@ if (process.env.DB_DIALECT === 'mysql') {
     password: process.env.DB_PASSWORD || 'produit_password',
     database: process.env.DB_NAME || 'produit_service_db'
   });
-} else {
-  // Configuration SQLite (par défaut)
-  dbConfig.storage = process.env.DB_STORAGE || './data/produit_service.db';
 }
 
 const sequelize = new Sequelize(dbConfig);

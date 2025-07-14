@@ -1,11 +1,33 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const { httpRequestsTotal, httpRequestDuration, dbOperationsTotal, register } = require('./src/utils/metrics');
+const promClient = require('prom-client');
 const createStockRoutes = require('./src/api/routes');
 require('dotenv').config();
 
-const stockOperationsTotal = dbOperationsTotal;
+// Configuration des métriques Prometheus
+const collectDefaultMetrics = promClient.collectDefaultMetrics;
+collectDefaultMetrics({ timeout: 5000 });
+
+// Métriques personnalisées
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route', 'status_code', 'service'],
+  buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10]
+});
+
+const httpRequestsTotal = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status_code', 'service']
+});
+
+const stockOperationsTotal = new promClient.Counter({
+  name: 'stock_operations_total',
+  help: 'Total number of stock operations',
+  labelNames: ['operation', 'service']
+});
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -95,8 +117,8 @@ function setupRoutes() {
 // Route pour exposer les métriques Prometheus
 app.get('/metrics', async (req, res) => {
   try {
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
+    res.set('Content-Type', promClient.register.contentType);
+    res.end(await promClient.register.metrics());
   } catch (ex) {
     res.status(500).end(ex);
   }

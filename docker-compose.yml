@@ -1,53 +1,355 @@
-version: '3.8'
-
 networks:
-  kong-net:
-    driver: bridge
   pos-network:
     driver: bridge
 
 volumes:
-  kong_data:
-  postgres_data:
+  kong-data:
+  postgres-produit-data:
+  postgres-stock-data:
+  postgres-vente-data:
+  postgres-reporting-data:
+  prometheus-data:
+  grafana-data:
 
 services:
-  # === INFRASTRUCTURE KONG ===
-  kong-database:
-    image: postgres:13
+  # PostgreSQL Databases - Une par microservice
+  postgres-produit:
+    image: postgres:15
     environment:
+      POSTGRES_DB: produit_db
+      POSTGRES_USER: produit_user
+      POSTGRES_PASSWORD: produit_password
+    volumes:
+      - postgres-produit-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U produit_user -d produit_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-stock:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: stock_db
+      POSTGRES_USER: stock_user
+      POSTGRES_PASSWORD: stock_password
+    volumes:
+      - postgres-stock-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stock_user -d stock_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-vente:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: vente_db
+      POSTGRES_USER: vente_user
+      POSTGRES_PASSWORD: vente_password
+    volumes:
+      - postgres-vente-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vente_user -d vente_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-reporting:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: reporting_db
+      POSTGRES_USER: reporting_user
+      POSTGRES_PASSWORD: reporting_password
+    volumes:
+      - postgres-reporting-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reporting_user -d reporting_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Microservices - 2 instances par service
+  # Service Produit
+  produit-service-1:
+    build:
+      context: microservices/produit-service
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SERVICE_NAME=produit
+      - DATABASE_URL=postgresql://produit_user:produit_password@postgres-produit:5432/produit_db
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres-produit:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/api/produits || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  produit-service-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - SERVICE_NAME=produit
+      - DATABASE_URL=postgresql://produit_user:produit_password@postgres-produit:5432/produit_db
+    depends_on:
+      postgres-produit:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/api/produits || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Service Stock
+  stock-service-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - SERVICE_NAME=stock
+      - DATABASE_URL=postgresql://stock_user:stock_password@postgres-stock:5432/stock_db
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres-stock:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002/stocks || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  stock-service-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - SERVICE_NAME=stock
+      - DATABASE_URL=postgresql://stock_user:stock_password@postgres-stock:5432/stock_db
+    depends_on:
+      postgres-stock:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002/stocks || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Service Vente
+  vente-service-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - SERVICE_NAME=vente
+      - DATABASE_URL=postgresql://vente_user:vente_password@postgres-vente:5432/vente_db
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres-vente:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3003/api/ventes || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  vente-service-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - SERVICE_NAME=vente
+      - DATABASE_URL=postgresql://vente_user:vente_password@postgres-vente:5432/vente_db
+    depends_on:
+      postgres-vente:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3003/api/ventes || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Service Reporting
+  reporting-service-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - SERVICE_NAME=reporting
+      - DATABASE_URL=postgresql://reporting_user:reporting_password@postgres-reporting:5432/reporting_db
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres-reporting:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3004/api/reports || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  reporting-service-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - SERVICE_NAME=reporting
+      - DATABASE_URL=postgresql://reporting_user:reporting_password@postgres-reporting:5432/reporting_db
+    depends_on:
+      postgres-reporting:
+        condition: service_healthy
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3004/api/reports || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Kong API Gateway - Load Balancer
+  kong-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: kong
       POSTGRES_USER: kong
       POSTGRES_PASSWORD: kong
-      POSTGRES_DB: kong
     volumes:
-      - kong_data:/var/lib/postgresql/data
+      - kong-data:/var/lib/postgresql/data
     networks:
-      - kong-net
+      - pos-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kong"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "pg_isready -U kong -d kong"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   kong-migrations:
     image: kong:3.4
     command: kong migrations bootstrap
     environment:
       KONG_DATABASE: postgres
-      KONG_PG_HOST: kong-database
+      KONG_PG_HOST: kong-db
       KONG_PG_USER: kong
       KONG_PG_PASSWORD: kong
       KONG_PG_DATABASE: kong
     depends_on:
-      kong-database:
+      kong-db:
         condition: service_healthy
     networks:
-      - kong-net
+      - pos-network
+
+  kong-migrations-up:
+    image: kong:3.4
+    command: kong migrations up && kong migrations finish
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+    depends_on:
+      kong-migrations:
+        condition: service_completed_successfully
+    networks:
+      - pos-network
 
   kong:
     image: kong:3.4
     environment:
       KONG_DATABASE: postgres
-      KONG_PG_HOST: kong-database
+      KONG_PG_HOST: kong-db
       KONG_PG_USER: kong
       KONG_PG_PASSWORD: kong
       KONG_PG_DATABASE: kong
@@ -58,348 +360,173 @@ services:
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
       KONG_ADMIN_GUI_URL: http://localhost:8002
     ports:
-      - "8000:8000"  # Kong Proxy (API Gateway)
-      - "8001:8001"  # Kong Admin API
-      - "8002:8002"  # Kong Manager UI
+      - "8000:8000"  # Proxy
+      - "8443:8443"  # Proxy SSL
+      - "8001:8001"  # Admin API
+      - "8444:8444"  # Admin API SSL
+      - "8002:8002"  # Manager
+      - "8445:8445"  # Manager SSL
     depends_on:
-      - kong-migrations
+      kong-migrations-up:
+        condition: service_completed_successfully
     networks:
-      - kong-net
       - pos-network
     healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 10s
+      test: ["CMD-SHELL", "kong health"]
+      interval: 30s
       timeout: 10s
       retries: 3
 
-  # === BASE DE DONNÉES COMMUNE ===
-  postgres-db:
-    image: postgres:16
+  # Service Legacy (Console et données historiques)
+  legacy-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
-      POSTGRES_DB: pos_system
-      POSTGRES_USER: pos_user
-      POSTGRES_PASSWORD: pos_password
+      - NODE_ENV=production
+      - PORT=3000
+      - SERVICE_NAME=legacy
+      - KONG_ADMIN_URL=http://kong:8001
+      - KONG_PROXY_URL=http://kong:8000
     ports:
-      - "5432:5432"
+      - "3000:3000"
+    depends_on:
+      kong:
+        condition: service_healthy
+    networks:
+      - pos-network
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - pos-network
+      - ./src/database.sqlite:/app/src/database.sqlite
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pos_user -d pos_system"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # === MICROSERVICES - 2 INSTANCES CHACUN ===
-  
-  # Produit Service - Instance 1
-  produit-service-1:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: microservice
-        SERVICE_NAME: produit-service
-        PORT: 3001
-    environment:
-      - PORT=3001
-      - SERVICE_TYPE=microservice
-      - SERVICE_NAME=produit-service
-      - INSTANCE_ID=produit-1
-    ports:
-      - "3001:3001"
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - pos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Produit Service - Instance 2
-  produit-service-2:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: microservice
-        SERVICE_NAME: produit-service
-        PORT: 3011
-    environment:
-      - PORT=3011
-      - SERVICE_TYPE=microservice
-      - SERVICE_NAME=produit-service
-      - INSTANCE_ID=produit-2
-    ports:
-      - "3011:3011"
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - pos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3011/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Stock Service - Instance 1
-  stock-service-1:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: microservice
-        SERVICE_NAME: stock-service
-        PORT: 3002
-    environment:
-      - PORT=3002
-      - SERVICE_TYPE=microservice
-      - SERVICE_NAME=stock-service
-      - INSTANCE_ID=stock-1
-    ports:
-      - "3002:3002"
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - pos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Stock Service - Instance 2
-  stock-service-2:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: microservice
-        SERVICE_NAME: stock-service
-        PORT: 3012
-    environment:
-      - PORT=3012
-      - SERVICE_TYPE=microservice
-      - SERVICE_NAME=stock-service
-      - INSTANCE_ID=stock-2
-    ports:
-      - "3012:3012"
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - pos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3012/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Vente Service - Instance 1
-  vente-service-1:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: microservice
-        SERVICE_NAME: vente-service
-        PORT: 3003
-    environment:
-      - PORT=3003
-      - SERVICE_TYPE=microservice
-      - SERVICE_NAME=vente-service
-      - INSTANCE_ID=vente-1
-    ports:
-      - "3003:3003"
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - pos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Vente Service - Instance 2
-  vente-service-2:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: microservice
-        SERVICE_NAME: vente-service
-        PORT: 3013
-    environment:
-      - PORT=3013
-      - SERVICE_TYPE=microservice
-      - SERVICE_NAME=vente-service
-      - INSTANCE_ID=vente-2
-    ports:
-      - "3013:3013"
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - pos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3013/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Reporting Service - Instance 1
-  reporting-service-1:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: microservice
-        SERVICE_NAME: reporting-service
-        PORT: 3004
-    environment:
-      - PORT=3004
-      - SERVICE_TYPE=microservice
-      - SERVICE_NAME=reporting-service
-      - INSTANCE_ID=reporting-1
-    ports:
-      - "3004:3004"
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - pos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Reporting Service - Instance 2
-  reporting-service-2:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: microservice
-        SERVICE_NAME: reporting-service
-        PORT: 3014
-    environment:
-      - PORT=3014
-      - SERVICE_TYPE=microservice
-      - SERVICE_NAME=reporting-service
-      - INSTANCE_ID=reporting-2
-    ports:
-      - "3014:3014"
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-    networks:
-      - pos-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3014/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # === CONSOLES ===
-  console-pos:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: console-pos
-        PORT: 3100
-    environment:
-      - PORT=3100
-      - SERVICE_TYPE=console-pos
-      - API_GATEWAY_URL=http://kong:8000
-    ports:
-      - "3100:3100"
-    depends_on:
-      - kong
-    networks:
-      - pos-network
-
-  console-maisonmere:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: console-maisonmere
-        PORT: 3101
-    environment:
-      - PORT=3101
-      - SERVICE_TYPE=console-maisonmere
-      - API_GATEWAY_URL=http://kong:8000
-    ports:
-      - "3101:3101"
-    depends_on:
-      - kong
-    networks:
-      - pos-network
-
-  # === LEGACY SYSTEM ===
-  legacy-system:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-      args:
-        SERVICE_TYPE: legacy
-        PORT: 3200
-    environment:
-      - PORT=3200
-      - SERVICE_TYPE=legacy
-    ports:
-      - "3200:3200"
-    networks:
-      - pos-network
-
-  # === MONITORING ===
+  # Monitoring - Prometheus
   prometheus:
     image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./config/prometheus-kong.yml:/etc/prometheus/prometheus.yml
     networks:
-      - kong-net
       - pos-network
+    depends_on:
+      - kong
 
+  # Monitoring - Grafana
   grafana:
     image: grafana/grafana:latest
+    ports:
+      - "3005:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-    ports:
-      - "3030:3000"
+      - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
-      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     networks:
-      - kong-net
       - pos-network
+    depends_on:
+      - prometheus
 
-  # === CONFIGURATION KONG ===
+  # Kong Configuration Service
   kong-config:
     image: curlimages/curl:latest
     depends_on:
-      - kong
+      kong:
+        condition: service_healthy
+      produit-service-1:
+        condition: service_healthy
+      stock-service-1:
+        condition: service_healthy
+      vente-service-1:
+        condition: service_healthy
+      reporting-service-1:
+        condition: service_healthy
     networks:
-      - kong-net
       - pos-network
-    volumes:
-      - ./config/kong-config.sh:/kong-config.sh:ro
-    command: sh /kong-config.sh
+    command: >
+      sh -c "
+        sleep 30 &&
+        
+        # Service Produit
+        curl -i -X POST http://kong:8001/services/ \
+          --data 'name=produit-service' \
+          --data 'url=http://produit-service-1:3001' &&
+        
+        curl -i -X POST http://kong:8001/services/produit-service/routes \
+          --data 'paths[]=/api/produits' &&
+        
+        curl -i -X POST http://kong:8001/upstreams \
+          --data 'name=produit-upstream' &&
+        
+        curl -i -X POST http://kong:8001/upstreams/produit-upstream/targets \
+          --data 'target=produit-service-1:3001' &&
+        
+        curl -i -X POST http://kong:8001/upstreams/produit-upstream/targets \
+          --data 'target=produit-service-2:3001' &&
+        
+        # Service Stock
+        curl -i -X POST http://kong:8001/services/ \
+          --data 'name=stock-service' \
+          --data 'url=http://stock-service-1:3002' &&
+        
+        curl -i -X POST http://kong:8001/services/stock-service/routes \
+          --data 'paths[]=/stocks' &&
+        
+        curl -i -X POST http://kong:8001/upstreams \
+          --data 'name=stock-upstream' &&
+        
+        curl -i -X POST http://kong:8001/upstreams/stock-upstream/targets \
+          --data 'target=stock-service-1:3002' &&
+        
+        curl -i -X POST http://kong:8001/upstreams/stock-upstream/targets \
+          --data 'target=stock-service-2:3002' &&
+        
+        # Service Vente
+        curl -i -X POST http://kong:8001/services/ \
+          --data 'name=vente-service' \
+          --data 'url=http://vente-service-1:3003' &&
+        
+        curl -i -X POST http://kong:8001/services/vente-service/routes \
+          --data 'paths[]=/api/ventes' &&
+        
+        curl -i -X POST http://kong:8001/upstreams \
+          --data 'name=vente-upstream' &&
+        
+        curl -i -X POST http://kong:8001/upstreams/vente-upstream/targets \
+          --data 'target=vente-service-1:3003' &&
+        
+        curl -i -X POST http://kong:8001/upstreams/vente-upstream/targets \
+          --data 'target=vente-service-2:3003' &&
+        
+        # Service Reporting
+        curl -i -X POST http://kong:8001/services/ \
+          --data 'name=reporting-service' \
+          --data 'url=http://reporting-service-1:3004' &&
+        
+        curl -i -X POST http://kong:8001/services/reporting-service/routes \
+          --data 'paths[]=/api/reports' &&
+        
+        curl -i -X POST http://kong:8001/upstreams \
+          --data 'name=reporting-upstream' &&
+        
+        curl -i -X POST http://kong:8001/upstreams/reporting-upstream/targets \
+          --data 'target=reporting-service-1:3004' &&
+        
+        curl -i -X POST http://kong:8001/upstreams/reporting-upstream/targets \
+          --data 'target=reporting-service-2:3004' &&
+        
+        echo 'Kong configuration complete!'
+      "
