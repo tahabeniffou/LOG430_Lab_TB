@@ -4,10 +4,9 @@ const sequelize = require('./index');
 module.exports = (sequelize, DataTypes) => {
   class Magasin extends Model {
     static associate(models) {
+      // Seule association legacy restante
       Magasin.hasMany(models.Utilisateur, { foreignKey: 'magasinId', as: 'utilisateurs' });
-      Magasin.hasMany(models.Vente, { foreignKey: 'magasinId', as: 'ventes' });
-      Magasin.hasMany(models.Produit, { foreignKey: 'magasinId', as: 'produits' });
-      Magasin.hasMany(models.LigneVente, { foreignKey: 'magasinId', as: 'lignesDeVente' });
+      // Note: Les autres associations (Vente, Produit, LigneVente) sont gérées par les microservices
     }
   }
 

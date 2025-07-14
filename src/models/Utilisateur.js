@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
   class Utilisateur extends Model {
     static associate(models) {
       Utilisateur.belongsTo(models.Magasin, { foreignKey: 'magasinId', as: 'magasin' });
-      Utilisateur.hasMany(models.Vente, { foreignKey: 'utilisateurId', as: 'ventes' });
+      // Note: L'association Vente est gérée par vente-service
     }
 
     async validerMotDePasse(motDePasse) {
@@ -45,7 +45,11 @@ module.exports = (sequelize, DataTypes) => {
     },
     magasinId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: true, // Permet NULL pour les admins centraux
+      references: {
+        model: 'Magasins',
+        key: 'id'
+      }
     }
   }, {
     sequelize,

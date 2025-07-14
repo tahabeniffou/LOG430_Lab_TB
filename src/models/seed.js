@@ -1,127 +1,49 @@
-// ⚠️  SCRIPT DEPRECIÉ - DONNÉES MIGREES VERS MICROSERVICES
-// Ce script n'est plus utilisé car les données sont maintenant gérées par :
-// - produit-service (port 3001) pour les produits
-// - vente-service (port 3004) pour les ventes
-// - stock-service (port 3002) pour le stock
-// Ce script est maintenu pour compatibilité mais ne doit plus être exécuté
-
-console.log('--- ⚠️  SCRIPT DEPRECIÉ - Démarrage du script de seed COMPLET ---');
-const { sequelize, Magasin, Utilisateur, Produit, Vente, LigneVente, Categorie } = require('./index');
-require('./associations');
+// ✅ SCRIPT LEGACY - DONNÉES CENTRALES UNIQUEMENT
+console.log('--- ✅ SCRIPT LEGACY - Démarrage du seed pour les données centrales ---');
+const { sequelize, Magasin, Utilisateur } = require('./index');
 
 async function seed() {
   try {
-    console.log('Connexion à la base de données réussie.');
+    console.log('🔄 Synchronisation de la base de données legacy...');
+    await sequelize.sync({ force: true });
+    console.log('✅ Base de données legacy synchronisée.');
 
     // Création des magasins
+    console.log('🏪 Création des magasins...');
     const magasins = await Magasin.bulkCreate([
-      { nom: 'Magasin Centre', adresse: '123 rue Principale' },
-      { nom: 'Magasin Nord', adresse: '456 avenue du Nord' },
-      { nom: 'Magasin Sud', adresse: '789 boulevard du Sud' }
+      { nom: 'Magasin Centre-Ville', adresse: '123 rue Sainte-Catherine, Montréal' },
+      { nom: 'Magasin Plateau', adresse: '456 avenue du Mont-Royal, Montréal' },
+      { nom: 'Magasin Westmount', adresse: '789 rue Sherbrooke, Westmount' }
     ], { returning: true });
-    console.log('Magasins créés :', magasins.map(m => m.toJSON()));
+    console.log('✅ Magasins créés:', magasins.length);
 
-    // Création des utilisateurs (rôles et mots de passe variés)
+    // Création des utilisateurs
+    console.log('👥 Création des utilisateurs...');
     const usersData = [
-      { nom: 'Dupont', prenom: 'Jean', role: 'caissier', motDePasse: '1234' },
-      { nom: 'Martin', prenom: 'Sophie', role: 'gerant', motDePasse: 'abcd' },
-      { nom: 'Durand', prenom: 'Paul', role: 'caissier', motDePasse: 'pass1' },
-      { nom: 'Lefevre', prenom: 'Claire', role: 'gerant', motDePasse: 'pass2' }
+      { nom: 'Dupont', prenom: 'Jean', role: 'caissier', motDePasse: 'caissier123', courriel: 'jean.dupont@magasin1.com', nomUtilisateur: 'jean.dupont', magasinId: magasins[0].id },
+      { nom: 'Martin', prenom: 'Sophie', role: 'manager', motDePasse: 'manager123', courriel: 'sophie.martin@magasin1.com', nomUtilisateur: 'sophie.martin', magasinId: magasins[0].id },
+      { nom: 'Durand', prenom: 'Paul', role: 'caissier', motDePasse: 'caissier456', courriel: 'paul.durand@magasin2.com', nomUtilisateur: 'paul.durand', magasinId: magasins[1].id },
+      { nom: 'Lefevre', prenom: 'Claire', role: 'manager', motDePasse: 'manager456', courriel: 'claire.lefevre@magasin2.com', nomUtilisateur: 'claire.lefevre', magasinId: magasins[1].id },
+      { nom: 'Moreau', prenom: 'Pierre', role: 'caissier', motDePasse: 'caissier789', courriel: 'pierre.moreau@magasin3.com', nomUtilisateur: 'pierre.moreau', magasinId: magasins[2].id },
+      { nom: 'Girard', prenom: 'Marie', role: 'manager', motDePasse: 'manager789', courriel: 'marie.girard@magasin3.com', nomUtilisateur: 'marie.girard', magasinId: magasins[2].id },
+      { nom: 'Admin', prenom: 'System', role: 'admin', motDePasse: 'admin123', courriel: 'admin@systeme.com', nomUtilisateur: 'admin', magasinId: null }
     ];
-    let allUsers = [];
-    for (let i = 0; i < magasins.length; i++) {
-      const magasin = magasins[i];
-      const users = await Utilisateur.bulkCreate(usersData.map((u, j) => ({ 
-        ...u, 
-        courriel: `${u.prenom.toLowerCase()}.${u.nom.toLowerCase()}.m${i+1}@example.com`,
-        nomUtilisateur: `${u.prenom.toLowerCase()}_${u.nom.toLowerCase()}_m${i+1}`,
-        magasinId: magasin.id 
-      })), { returning: true });
-      allUsers = allUsers.concat(users);
-      console.log(`Utilisateurs créés pour le magasin ${magasin.nom} :`, users.map(u => u.toJSON()));
-    }
+    
+    const utilisateurs = await Utilisateur.bulkCreate(usersData, { returning: true });
+    console.log('✅ Utilisateurs créés:', utilisateurs.length);
 
-    // Création de produits variés pour chaque magasin
-    const produitsData = [
-      { nom: 'Pain', prix: 2.5, quantiteStock: 100, description: 'Pain frais artisanal' },
-      { nom: 'Lait', prix: 1.5, quantiteStock: 80, description: 'Lait entier 1L' },
-      { nom: 'Fromage', prix: 4.0, quantiteStock: 50, description: 'Fromage de chèvre' },
-      { nom: 'Jus', prix: 3.0, quantiteStock: 60, description: 'Jus d\'orange 100% pur' },
-      { nom: 'Biscuit', prix: 2.0, quantiteStock: 120, description: 'Biscuits au chocolat' },
-      { nom: 'Café', prix: 5.0, quantiteStock: 40, description: 'Café en grains premium' }
-    ];
-    let allProduits = [];
-    for (let i = 0; i < magasins.length; i++) {
-      const magasin = magasins[i];
-      const produits = await Produit.bulkCreate(produitsData.map(p => ({ 
-        ...p, 
-        nom: `${p.nom} - ${magasin.nom}`,
-        magasinId: magasin.id 
-      })), { returning: true });
-      allProduits = allProduits.concat(produits);
-      console.log(`Produits créés pour le magasin ${magasin.nom} :`, produits.map(p => p.toJSON()));
-    }
+    console.log('\n🎉 DONNÉES LEGACY CRÉÉES AVEC SUCCÈS !');
+    console.log(`📋 Résumé: ${magasins.length} magasins, ${utilisateurs.length} utilisateurs`);
 
-    // Création de ventes et lignes de vente
-    for (const magasin of magasins) {
-      // On prend 2 utilisateurs et 3 produits au hasard pour chaque vente
-      const users = allUsers.filter(u => u.magasinId === magasin.id);
-      const produits = allProduits.filter(p => p.magasinId === magasin.id);
-      for (let i = 0; i < 5; i++) { // 5 ventes par magasin
-        const vendeur = users[Math.floor(Math.random() * users.length)];
-        const produitsVente = produits.sort(() => 0.5 - Math.random()).slice(0, 3);
-        let total = 0;
-        const lignes = produitsVente.map(prod => {
-          const quantite = Math.floor(Math.random() * 5) + 1;
-          const prixUnitaire = prod.prix;
-          const sousTotal = prixUnitaire * quantite;
-          total += sousTotal;
-          return { 
-            produitId: prod.id, 
-            quantite, 
-            prixUnitaire,
-            sousTotal, 
-            magasinId: magasin.id 
-          };
-        });
-        const vente = await Vente.create({ 
-          montantTotal: total, 
-          dateVente: new Date(), 
-          magasinId: magasin.id,
-          utilisateurId: vendeur.id
-        });
-        for (const ligne of lignes) {
-          await LigneVente.create({ ...ligne, venteId: vente.id });
-        }
-        console.log(`Vente créée (magasin ${magasin.nom}, vendeur ${vendeur.nom}) : total $${total.toFixed(2)}`);
-      }
-    }
-
-    // Script de peuplement additionnel
-    // Créer des catégories
-    const [catBoissons, catSnacks] = await Categorie.bulkCreate([
-      { nom: 'Boissons' },
-      { nom: 'Snacks' }
-    ], { returning: true });
-
-    // Créer des produits additionnels
-    await Produit.bulkCreate([
-      { nom: 'Coca-Cola', prix: 1.5, stock: 100, CategorieId: catBoissons.id, MagasinId: magasins[0].id },
-      { nom: 'Chips Lays', prix: 1.2, stock: 80, CategorieId: catSnacks.id, MagasinId: magasins[0].id },
-      { nom: 'Pepsi', prix: 1.4, stock: 90, CategorieId: catBoissons.id, MagasinId: magasins[1].id },
-      { nom: 'KitKat', prix: 0.8, stock: 120, CategorieId: catSnacks.id, MagasinId: magasins[1].id }
-    ]);
-
-    console.log('Seed COMPLET terminé : magasins, utilisateurs, produits, ventes et lignes de vente créés.');
-  } catch (e) {
-    console.error('Erreur dans le script de seed :', e);
-    throw e;
+  } catch (error) {
+    console.error('❌ Erreur lors de la création des données:', error);
+  } finally {
+    await sequelize.close();
   }
 }
 
-module.exports = seed;
-
-// Démarrage seulement si ce fichier est exécuté directement
 if (require.main === module) {
-  seed().then(() => process.exit(0));
+  seed();
 }
+
+module.exports = { seed };

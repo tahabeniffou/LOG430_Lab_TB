@@ -35,7 +35,8 @@ fs
     );
   })
   .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+    const modelDefiner = require(path.join(__dirname, file));
+    const model = modelDefiner(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
   });
 
@@ -48,24 +49,13 @@ Object.keys(db).forEach(modelName => {
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// Importer les modèles legacy (non gérés par les microservices)
-const Magasin = require('./Magasin');
-const Utilisateur = require('./Utilisateur');
-const Categorie = require('./Categorie'); // Utilisé pour la synchronisation uniquement
-
-// Note: Les modèles suivants sont maintenant gérés par les microservices :
-// - Produit (produit-service)
-// - Vente (vente-service) 
-// - LigneVente (vente-service)
-// - Paiement (vente-service)
-// - DemandeReappro (stock-service)
-
 // Synchroniser seulement les modèles legacy
 const syncDatabase = async () => {
   try {
     await sequelize.sync({ alter: true });
     console.log('✅ Base de données legacy synchronisée avec succès.');
-    console.log('ℹ️  Les modèles Produit, Vente, LigneVente, Paiement et DemandeReappro sont gérés par les microservices.');
+    console.log('ℹ️  Seuls Magasin et Utilisateur sont gérés localement.');
+    console.log('ℹ️  Tous les autres modèles sont gérés par les microservices.');
   } catch (error) {
     console.error('❌ Erreur de synchronisation de la base de données legacy:', error);
   }
@@ -74,8 +64,6 @@ const syncDatabase = async () => {
 module.exports = {
     sequelize,
     syncDatabase,
-    // Modèles legacy uniquement
-    Magasin,
-    Utilisateur,
-    Categorie
+    // Modèles legacy chargés automatiquement
+    ...db
 };
