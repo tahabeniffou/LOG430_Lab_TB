@@ -109,7 +109,79 @@ curl -i -X POST http://kong:8001/services/ \
     --data "host=reporting-upstream"
 
 curl -i -X POST http://kong:8001/services/reporting-service/routes \
-    --data "paths[]=/api/reportings" \
+    --data "paths[]=/api/reports" \
+    --data "strip_path=false"
+
+# =====================================
+# SERVICE COMPTE avec Load Balancing
+# =====================================
+echo "👤 Configuration service Compte..."
+
+curl -i -X POST http://kong:8001/upstreams \
+    --data "name=compte-upstream"
+
+curl -i -X POST http://kong:8001/upstreams/compte-upstream/targets \
+    --data "target=compte-service-1:3005" \
+    --data "weight=100"
+
+curl -i -X POST http://kong:8001/upstreams/compte-upstream/targets \
+    --data "target=compte-service-2:3005" \
+    --data "weight=100"
+
+curl -i -X POST http://kong:8001/services/ \
+    --data "name=compte-service" \
+    --data "host=compte-upstream"
+
+curl -i -X POST http://kong:8001/services/compte-service/routes \
+    --data "paths[]=/api/comptes" \
+    --data "strip_path=false"
+
+# =====================================
+# SERVICE PANIER avec Load Balancing
+# =====================================
+echo "🛒 Configuration service Panier..."
+
+curl -i -X POST http://kong:8001/upstreams \
+    --data "name=panier-upstream"
+
+curl -i -X POST http://kong:8001/upstreams/panier-upstream/targets \
+    --data "target=panier-service-1:3006" \
+    --data "weight=100"
+
+curl -i -X POST http://kong:8001/upstreams/panier-upstream/targets \
+    --data "target=panier-service-2:3006" \
+    --data "weight=100"
+
+curl -i -X POST http://kong:8001/services/ \
+    --data "name=panier-service" \
+    --data "host=panier-upstream"
+
+curl -i -X POST http://kong:8001/services/panier-service/routes \
+    --data "paths[]=/api/paniers" \
+    --data "strip_path=false"
+
+# =====================================
+# SERVICE CHECKOUT avec Load Balancing
+# =====================================
+echo "💳 Configuration service Checkout..."
+
+curl -i -X POST http://kong:8001/upstreams \
+    --data "name=checkout-upstream"
+
+curl -i -X POST http://kong:8001/upstreams/checkout-upstream/targets \
+    --data "target=checkout-service-1:3007" \
+    --data "weight=100"
+
+curl -i -X POST http://kong:8001/upstreams/checkout-upstream/targets \
+    --data "target=checkout-service-2:3007" \
+    --data "weight=100"
+
+curl -i -X POST http://kong:8001/services/ \
+    --data "name=checkout-service" \
+    --data "host=checkout-upstream"
+
+curl -i -X POST http://kong:8001/services/checkout-service/routes \
+    --data "paths[]=/api/checkout" \
     --data "strip_path=false"
 
 # =====================================
@@ -118,7 +190,7 @@ curl -i -X POST http://kong:8001/services/reporting-service/routes \
 echo "📊 Configuration plugins de monitoring..."
 
 # Plugin Prometheus pour chaque service
-for service in produit-service stock-service vente-service reporting-service; do
+for service in produit-service stock-service vente-service reporting-service compte-service panier-service checkout-service; do
   curl -i -X POST http://kong:8001/services/$service/plugins \
     --data "name=prometheus"
 done

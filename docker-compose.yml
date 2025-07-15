@@ -10,6 +10,9 @@ volumes:
   postgres-reporting-data:
   prometheus-data:
   grafana-data:
+  postgres-compte-data:
+  postgres-panier-data:
+  postgres-checkout-data:
 
 services:
   # =====================================
@@ -458,7 +461,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3005:3000"
+      - "3008:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
@@ -469,3 +472,218 @@ services:
       - prometheus
     networks:
       - pos-network
+
+  # =====================================
+  # BASES DE DONNÉES POUR NOUVEAUX MICROSERVICES
+  # =====================================
+  postgres-compte:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: compte_db
+      POSTGRES_USER: compte_user
+      POSTGRES_PASSWORD: compte_password
+    volumes:
+      - postgres-compte-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U compte_user -d compte_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-panier:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: panier_db
+      POSTGRES_USER: panier_user
+      POSTGRES_PASSWORD: panier_password
+    volumes:
+      - postgres-panier-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U panier_user -d panier_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-checkout:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: checkout_db
+      POSTGRES_USER: checkout_user
+      POSTGRES_PASSWORD: checkout_password
+    volumes:
+      - postgres-checkout-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checkout_user -d checkout_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =====================================
+  # MICROSERVICES E-COMMERCE (2 INSTANCES CHACUN)
+  # =====================================
+  
+  # Compte Service - Instance 1
+  compte-service-1:
+    build: ./microservices/compte-service
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - INSTANCE_ID=compte-instance-1
+      - INSTANCE_NAME=Compte Service 1
+      - DB_HOST=postgres-compte
+      - DB_PORT=5432
+      - DB_NAME=compte_db
+      - DB_USER=compte_user
+      - DB_PASSWORD=compte_password
+      - JWT_SECRET=super-secret-jwt-key-for-pos-system
+    depends_on:
+      - postgres-compte
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Compte Service - Instance 2
+  compte-service-2:
+    build: ./microservices/compte-service
+    ports:
+      - "3015:3005"
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - INSTANCE_ID=compte-instance-2
+      - INSTANCE_NAME=Compte Service 2
+      - DB_HOST=postgres-compte
+      - DB_PORT=5432
+      - DB_NAME=compte_db
+      - DB_USER=compte_user
+      - DB_PASSWORD=compte_password
+      - JWT_SECRET=super-secret-jwt-key-for-pos-system
+    depends_on:
+      - postgres-compte
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Panier Service - Instance 1
+  panier-service-1:
+    build: ./microservices/panier-service
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - INSTANCE_ID=panier-instance-1
+      - INSTANCE_NAME=Panier Service 1
+      - DB_HOST=postgres-panier
+      - DB_PORT=5432
+      - DB_NAME=panier_db
+      - DB_USER=panier_user
+      - DB_PASSWORD=panier_password
+      - PRODUIT_SERVICE_URL=http://kong:8000/api/produits
+    depends_on:
+      - postgres-panier
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Panier Service - Instance 2
+  panier-service-2:
+    build: ./microservices/panier-service
+    ports:
+      - "3016:3006"
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - INSTANCE_ID=panier-instance-2
+      - INSTANCE_NAME=Panier Service 2
+      - DB_HOST=postgres-panier
+      - DB_PORT=5432
+      - DB_NAME=panier_db
+      - DB_USER=panier_user
+      - DB_PASSWORD=panier_password
+      - PRODUIT_SERVICE_URL=http://kong:8000/api/produits
+    depends_on:
+      - postgres-panier
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Checkout Service - Instance 1
+  checkout-service-1:
+    build: ./microservices/checkout-service
+    ports:
+      - "3007:3007"
+    environment:
+      - NODE_ENV=production
+      - PORT=3007
+      - INSTANCE_ID=checkout-instance-1
+      - INSTANCE_NAME=Checkout Service 1
+      - DB_HOST=postgres-checkout
+      - DB_PORT=5432
+      - DB_NAME=checkout_db
+      - DB_USER=checkout_user
+      - DB_PASSWORD=checkout_password
+      - PANIER_SERVICE_URL=http://kong:8000/api/paniers
+      - STOCK_SERVICE_URL=http://kong:8000/api/stocks
+      - VENTE_SERVICE_URL=http://kong:8000/api/ventes
+    depends_on:
+      - postgres-checkout
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Checkout Service - Instance 2
+  checkout-service-2:
+    build: ./microservices/checkout-service
+    ports:
+      - "3017:3007"
+    environment:
+      - NODE_ENV=production
+      - PORT=3007
+      - INSTANCE_ID=checkout-instance-2
+      - INSTANCE_NAME=Checkout Service 2
+      - DB_HOST=postgres-checkout
+      - DB_PORT=5432
+      - DB_NAME=checkout_db
+      - DB_USER=checkout_user
+      - DB_PASSWORD=checkout_password
+      - PANIER_SERVICE_URL=http://kong:8000/api/paniers
+      - STOCK_SERVICE_URL=http://kong:8000/api/stocks
+      - VENTE_SERVICE_URL=http://kong:8000/api/ventes
+    depends_on:
+      - postgres-checkout
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
