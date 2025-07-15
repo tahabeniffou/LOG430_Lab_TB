@@ -64,6 +64,53 @@ function setupRoutes() {
   console.log('✅ Routes API Vente configurées');
 }
 
+// Endpoint Saga pour créer une vente
+app.post('/ventes', async (req, res) => {
+  try {
+    const { produitId, quantite, clientId, montant, date } = req.body;
+    
+    if (!produitId || !quantite || !clientId || !montant) {
+      return res.status(400).json({
+        error: 'produitId, quantite, clientId et montant sont requis'
+      });
+    }
+
+    if (quantite <= 0 || montant <= 0) {
+      return res.status(400).json({
+        error: 'quantite et montant doivent être positifs'
+      });
+    }
+
+    // Créer la vente
+    const venteId = `VENTE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const vente = {
+      id: venteId,
+      produitId,
+      quantite,
+      clientId,
+      montant,
+      date: date || new Date().toISOString(),
+      statut: 'CONFIRMEE',
+      createdAt: new Date().toISOString()
+    };
+
+    // Simuler la sauvegarde (en mémoire)
+    if (venteRepository && venteRepository.create) {
+      await venteRepository.create(vente);
+    }
+
+    console.log(`📦 Vente créée - ID: ${venteId}, Produit: ${produitId}, Client: ${clientId}`);
+    
+    res.status(201).json({
+      message: 'Vente créée avec succès',
+      vente
+    });
+  } catch (error) {
+    console.error('Erreur lors de la création de vente:', error);
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
 // Repository en mémoire pour mode dégradé
 function initMockRepository() {
   const mockData = new Map();

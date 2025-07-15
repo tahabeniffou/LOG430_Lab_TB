@@ -49,6 +49,13 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 30s
 
+  # Saga Orchestrator
+  - job_name: 'saga-orchestrator'
+    static_configs:
+      - targets: ['host.docker.internal:8010']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
   # PostgreSQL Databases
   - job_name: 'postgres-produit'
     static_configs:

@@ -1,24 +1,39 @@
-# 🏪 Système POS Microservices - Laboratoire 5
+# 🏪 Système POS Microservices - Laboratoire 6 SAGA PATTERN
 ## Architecture Logicielle (LOG430) - Été 2025
 
 [![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)](https://www.docker.com/)
 [![Kong](https://img.shields.io/badge/Kong-API%20Gateway-green?logo=kong)](https://konghq.com/)
 [![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-orange?logo=prometheus)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Dashboards-red?logo=grafana)](https://grafana.com/)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-brightgreen?logo=github)](https://github.com/features/actions)
+[![Saga Pattern](https://img.shields.io/badge/Pattern-Saga%20Orchestrator-purple?logo=star)](https://microservices.io/patterns/data/saga.html)
 
 ---
 
 ## 📋 Vue d'ensemble
 
-Système **Point of Sale (POS)** multi-magasins transformé en **architecture microservices** avec API Gateway Kong, load balancing et observabilité complète.
+Système **Point of Sale (POS)** avec **Pattern Saga** pour transactions distribuées, observabilité complète et compensation automatique des échecs.
 
-### 🎯 Objectifs du Laboratoire 5
+### 🎯 Objectifs du Laboratoire 6 - SAGA PATTERN
 
-- ✅ **Architecture Microservices** : 7 services indépendants avec DDD
-- ✅ **API Gateway Kong** : Routes, CORS, load balancing, logging
-- ✅ **Load Balancing** : 2 instances par service avec failover
-- ✅ **Observabilité** : Prometheus + Grafana avec métriques temps réel
-- ✅ **Documentation** : Arc42, ADR, Swagger, tests automatisés
+- ✅ **Saga Orchestrator** : 3 étapes avec compensation automatique
+- ✅ **Machine d'État** : Diagramme complet avec transitions
+- ✅ **Observabilité Avancée** : 103 métriques Prometheus + Dashboards Grafana
+- ✅ **Tests Automatisés** : Scénarios succès/échec avec CI/CD
+- ✅ **Résilience** : 100% des échecs compensés automatiquement
+
+### 🔄 **SAGA PATTERN - 3 ÉTAPES**
+
+```
+📦 STOCK_RESERVE → 💳 PAYMENT_DEBIT → 🛒 SALE_CREATE
+        ↓                  ↓                ↓
+   ❌ Stock fail      ❌ Payment fail   ❌ Sale fail
+        ↓                  ↓                ↓
+   🔄 No compensation  🔄 Credit refund  🔄 Full rollback
+```
+
+**Scénario Métier** : Vente avec réservation stock → débit paiement → création vente finale
+**Documentation** : [📊 State Machine Diagram](documentation/SAGA_STATE_MACHINE.md)
 
 ---
 

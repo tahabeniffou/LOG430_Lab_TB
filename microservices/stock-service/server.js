@@ -48,6 +48,93 @@ app.use((req, res, next) => {
 // Repository en mémoire (en attendant la base de données)
 let stockRepository;
 
+// Saga endpoints pour la réservation et libération de stock
+app.post('/stock/reserve', async (req, res) => {
+  try {
+    const { produitId, quantite } = req.body;
+    
+    if (!produitId || !quantite || quantite <= 0) {
+      return res.status(400).json({
+        error: 'produitId et quantite (positive) sont requis'
+      });
+    }
+
+    const stock = stockRepository.find(s => s.produitId == produitId);
+    
+    if (!stock) {
+      return res.status(404).json({
+        error: 'Produit non trouvé en stock'
+      });
+    }
+
+    if (stock.quantite < quantite) {
+      return res.status(400).json({
+        error: 'Stock insuffisant',
+        disponible: stock.quantite,
+        demande: quantite
+      });
+    }
+
+    // Réserver le stock (décrémenter la quantité)
+    stock.quantite -= quantite;
+    stock.reserve = (stock.reserve || 0) + quantite;
+    stock.updatedAt = new Date().toISOString();
+
+    stockOperationsTotal.labels('reserve', 'success', 'stock-service').inc();
+
+    res.status(200).json({
+      message: 'Stock réservé avec succès',
+      produitId,
+      quantiteReservee: quantite,
+      stockRestant: stock.quantite,
+      stockReserve: stock.reserve
+    });
+  } catch (error) {
+    console.error('Erreur lors de la réservation de stock:', error);
+    stockOperationsTotal.labels('reserve', 'error', 'stock-service').inc();
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
+app.post('/stock/release', async (req, res) => {
+  try {
+    const { produitId, quantite } = req.body;
+    
+    if (!produitId || !quantite || quantite <= 0) {
+      return res.status(400).json({
+        error: 'produitId et quantite (positive) sont requis'
+      });
+    }
+
+    const stock = stockRepository.find(s => s.produitId == produitId);
+    
+    if (!stock) {
+      return res.status(404).json({
+        error: 'Produit non trouvé en stock'
+      });
+    }
+
+    // Libérer le stock (remettre la quantité)
+    stock.quantite += quantite;
+    stock.reserve = Math.max(0, (stock.reserve || 0) - quantite);
+    stock.updatedAt = new Date().toISOString();
+
+    stockOperationsTotal.labels('release', 'success', 'stock-service').inc();
+
+    res.status(200).json({
+      message: 'Stock libéré avec succès',
+      produitId,
+      quantiteLiberee: quantite,
+      stockTotal: stock.quantite,
+      stockReserve: stock.reserve
+    });
+  } catch (error) {
+    console.error('Erreur lors de la libération de stock:', error);
+    stockOperationsTotal.labels('release', 'error', 'stock-service').inc();
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
 function initMockRepository() {
   const mockData = [
     { id: 1, produitId: 1, quantite: 100, seuilMinimum: 10, magasinId: 1, derniereMiseAJour: new Date().toISOString() },
@@ -128,6 +215,93 @@ app.get('/', (req, res) => {
       api: '/api/stocks'
     }
   });
+});
+
+// Saga endpoints pour la réservation et libération de stock
+app.post('/stock/reserve', async (req, res) => {
+  try {
+    const { produitId, quantite } = req.body;
+    
+    if (!produitId || !quantite || quantite <= 0) {
+      return res.status(400).json({
+        error: 'produitId et quantite (positive) sont requis'
+      });
+    }
+
+    const stock = stockRepository.find(s => s.produitId == produitId);
+    
+    if (!stock) {
+      return res.status(404).json({
+        error: 'Produit non trouvé en stock'
+      });
+    }
+
+    if (stock.quantite < quantite) {
+      return res.status(400).json({
+        error: 'Stock insuffisant',
+        disponible: stock.quantite,
+        demande: quantite
+      });
+    }
+
+    // Réserver le stock (décrémenter la quantité)
+    stock.quantite -= quantite;
+    stock.reserve = (stock.reserve || 0) + quantite;
+    stock.updatedAt = new Date().toISOString();
+
+    stockOperationsTotal.labels('reserve', 'success', 'stock-service').inc();
+
+    res.status(200).json({
+      message: 'Stock réservé avec succès',
+      produitId,
+      quantiteReservee: quantite,
+      stockRestant: stock.quantite,
+      stockReserve: stock.reserve
+    });
+  } catch (error) {
+    console.error('Erreur lors de la réservation de stock:', error);
+    stockOperationsTotal.labels('reserve', 'error', 'stock-service').inc();
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
+});
+
+app.post('/stock/release', async (req, res) => {
+  try {
+    const { produitId, quantite } = req.body;
+    
+    if (!produitId || !quantite || quantite <= 0) {
+      return res.status(400).json({
+        error: 'produitId et quantite (positive) sont requis'
+      });
+    }
+
+    const stock = stockRepository.find(s => s.produitId == produitId);
+    
+    if (!stock) {
+      return res.status(404).json({
+        error: 'Produit non trouvé en stock'
+      });
+    }
+
+    // Libérer le stock (remettre la quantité)
+    stock.quantite += quantite;
+    stock.reserve = Math.max(0, (stock.reserve || 0) - quantite);
+    stock.updatedAt = new Date().toISOString();
+
+    stockOperationsTotal.labels('release', 'success', 'stock-service').inc();
+
+    res.status(200).json({
+      message: 'Stock libéré avec succès',
+      produitId,
+      quantiteLiberee: quantite,
+      stockTotal: stock.quantite,
+      stockReserve: stock.reserve
+    });
+  } catch (error) {
+    console.error('Erreur lors de la libération de stock:', error);
+    stockOperationsTotal.labels('release', 'error', 'stock-service').inc();
+    res.status(500).json({ error: 'Erreur interne du serveur' });
+  }
 });
 
 // Gestion d'arrêt propre

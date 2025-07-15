@@ -180,6 +180,149 @@ function setupRoutes() {
     console.log('✅ Routes API configurées');
 }
 
+// Saga endpoints pour les opérations de paiement
+app.post('/compte/debit', async (req, res) => {
+    try {
+        const { clientId, montant } = req.body;
+        
+        if (!clientId || !montant || montant <= 0) {
+            return res.status(400).json({
+                error: 'clientId et montant (positif) sont requis'
+            });
+        }
+
+        // Simuler la vérification du compte et du solde
+        if (clientId === '999') {
+            return res.status(404).json({
+                error: 'Compte client non trouvé'
+            });
+        }
+
+        // Simuler un solde insuffisant pour certains cas de test
+        if (montant > 1000) {
+            return res.status(400).json({
+                error: 'Solde insuffisant',
+                soldeDisponible: 1000,
+                montantDemande: montant
+            });
+        }
+
+        // Simuler le débit du compte
+        const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        console.log(`💳 Paiement traité - Client: ${clientId}, Montant: ${montant}€`);
+        
+        res.status(200).json({
+            message: 'Paiement traité avec succès',
+            transactionId,
+            clientId,
+            montantDebite: montant,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Erreur lors du débit de compte:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+});
+
+app.post('/compte/credit', async (req, res) => {
+    try {
+        const { clientId, montant } = req.body;
+        
+        if (!clientId || !montant || montant <= 0) {
+            return res.status(400).json({
+                error: 'clientId et montant (positif) sont requis'
+            });
+        }
+
+        // Simuler le crédit du compte (remboursement)
+        const transactionId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        console.log(`💰 Remboursement traité - Client: ${clientId}, Montant: ${montant}€`);
+        
+        res.status(200).json({
+            message: 'Remboursement traité avec succès',
+            transactionId,
+            clientId,
+            montantCredite: montant,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Erreur lors du crédit de compte:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+});
+
+// Saga endpoints pour les opérations de paiement
+app.post('/compte/debit', async (req, res) => {
+    try {
+        const { clientId, montant } = req.body;
+        
+        if (!clientId || !montant || montant <= 0) {
+            return res.status(400).json({
+                error: 'clientId et montant (positif) sont requis'
+            });
+        }
+
+        // Simuler la vérification du compte et du solde
+        // Dans une vraie implémentation, ceci interagirait avec une base de données
+        if (clientId === '999') {
+            return res.status(404).json({
+                error: 'Compte client non trouvé'
+            });
+        }
+
+        // Simuler un solde insuffisant pour certains cas
+        if (montant > 1000) {
+            return res.status(400).json({
+                error: 'Solde insuffisant',
+                soldeDisponible: 1000,
+                montantDemande: montant
+            });
+        }
+
+        // Simuler le débit du compte
+        const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        res.status(200).json({
+            message: 'Paiement traité avec succès',
+            transactionId,
+            clientId,
+            montantDebite: montant,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Erreur lors du débit de compte:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+});
+
+app.post('/compte/credit', async (req, res) => {
+    try {
+        const { clientId, montant } = req.body;
+        
+        if (!clientId || !montant || montant <= 0) {
+            return res.status(400).json({
+                error: 'clientId et montant (positif) sont requis'
+            });
+        }
+
+        // Simuler le crédit du compte (remboursement)
+        const transactionId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        res.status(200).json({
+            message: 'Remboursement traité avec succès',
+            transactionId,
+            clientId,
+            montantCredite: montant,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Erreur lors du crédit de compte:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur' });
+    }
+});
+
 // Route métriques Prometheus
 app.get('/metrics', async (req, res) => {
     try {
