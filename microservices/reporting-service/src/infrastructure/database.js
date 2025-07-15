@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 
 // Configuration de la base de données spécifique au microservice reporting
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'reporting_service_db',
+  process.env.DB_NAME || 'reporting_db',
   process.env.DB_USER || 'reporting_user',
   process.env.DB_PASSWORD || 'reporting_password',
   {

@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 
 // Configuration de la base de données spécifique au microservice stock
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'stock_service_db',
+  process.env.DB_NAME || 'stock_db',
   process.env.DB_USER || 'stock_user',
   process.env.DB_PASSWORD || 'stock_password',
   {

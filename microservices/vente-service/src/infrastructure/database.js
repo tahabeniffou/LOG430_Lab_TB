@@ -2,7 +2,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 
 // Configuration de la base de données spécifique au microservice vente
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'vente_service_db',
+  process.env.DB_NAME || 'vente_db',
   process.env.DB_USER || 'vente_user',
   process.env.DB_PASSWORD || 'vente_password',
   {

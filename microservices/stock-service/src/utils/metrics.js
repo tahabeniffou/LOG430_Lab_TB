@@ -3,35 +3,38 @@ const promClient = require('prom-client');
 // Registre global pour éviter les doublons
 const register = promClient.register;
 
+// Clear all metrics to avoid conflicts
+register.clear();
+
 // Fonction pour obtenir ou créer une métrique Counter
 function getOrCreateCounter(name, help, labelNames) {
-  try {
-    return register.getSingleMetric(name);
-  } catch (error) {
-    // La métrique n'existe pas, la créer
-    return new promClient.Counter({
-      name,
-      help,
-      labelNames,
-      registers: [register]
-    });
+  const existingMetric = register.getSingleMetric(name);
+  if (existingMetric) {
+    return existingMetric;
   }
+  
+  return new promClient.Counter({
+    name,
+    help,
+    labelNames,
+    registers: [register]
+  });
 }
 
 // Fonction pour obtenir ou créer une métrique Histogram
 function getOrCreateHistogram(name, help, labelNames, buckets) {
-  try {
-    return register.getSingleMetric(name);
-  } catch (error) {
-    // La métrique n'existe pas, la créer
-    return new promClient.Histogram({
-      name,
-      help,
-      labelNames,
-      buckets,
-      registers: [register]
-    });
+  const existingMetric = register.getSingleMetric(name);
+  if (existingMetric) {
+    return existingMetric;
   }
+  
+  return new promClient.Histogram({
+    name,
+    help,
+    labelNames,
+    buckets,
+    registers: [register]
+  });
 }
 
 // Métriques partagées

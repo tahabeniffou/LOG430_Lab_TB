@@ -24,7 +24,7 @@ if (process.env.DB_DIALECT === 'postgres' || !process.env.DB_DIALECT) {
     port: process.env.DB_PORT || 5432,
     username: process.env.DB_USER || 'produit_user',
     password: process.env.DB_PASSWORD || 'produit_password',
-    database: process.env.DB_NAME || 'produit_service_db'
+    database: process.env.DB_NAME || 'produit_db'
   });
 } else if (process.env.DB_DIALECT === 'mysql') {
   // Configuration MySQL
