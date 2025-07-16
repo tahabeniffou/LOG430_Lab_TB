@@ -367,7 +367,7 @@ Ce projet est développé dans le cadre du cours LOG430 - Architecture Logiciell
 
 ## 👨‍💻 Auteur
 
-**[Nom de l'étudiant]**  
+Taha Beniffou 
 Étudiant en Génie Logiciel - ETS  
 Laboratoire 5 - Architecture Microservices  
 Été 2025
