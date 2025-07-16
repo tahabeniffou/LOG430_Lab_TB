@@ -1,0 +1,898 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Dashboard spécialisé pour l'activité des topics RabbitMQ - Architecture événementielle LAB 7",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "description": "Vue globale de l'activité RabbitMQ",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Débit Messages/sec"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "reqps"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "rabbitmq_global_messages",
+          "interval": "",
+          "legendFormat": "Messages Totaux",
+          "refId": "A"
+        },
+        {
+          "expr": "rabbitmq_connections",
+          "interval": "",
+          "legendFormat": "Connexions Actives",
+          "refId": "B"
+        },
+        {
+          "expr": "rabbitmq_consumers",
+          "interval": "",
+          "legendFormat": "Consommateurs",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(rabbitmq_global_messages[1m])",
+          "interval": "",
+          "legendFormat": "Débit Messages/sec",
+          "refId": "D"
+        },
+        {
+          "expr": "rabbitmq_queues",
+          "interval": "",
+          "legendFormat": "Queues Actives",
+          "refId": "E"
+        },
+        {
+          "expr": "rabbitmq_exchanges",
+          "interval": "",
+          "legendFormat": "Exchanges",
+          "refId": "F"
+        }
+      ],
+      "title": "🐰 RabbitMQ - Vue d'ensemble",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Activité détaillée par queue/topic",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages{queue=~\".*reclamation.*\"}",
+          "interval": "",
+          "legendFormat": "📝 {{queue}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rabbitmq_queue_messages{queue=~\".*notification.*\"}",
+          "interval": "",
+          "legendFormat": "📧 {{queue}}",
+          "refId": "B"
+        },
+        {
+          "expr": "rabbitmq_queue_messages{queue=~\".*audit.*\"}",
+          "interval": "",
+          "legendFormat": "📋 {{queue}}",
+          "refId": "C"
+        },
+        {
+          "expr": "rabbitmq_queue_messages{queue=~\".*analytics.*\"}",
+          "interval": "",
+          "legendFormat": "📊 {{queue}}",
+          "refId": "D"
+        }
+      ],
+      "title": "📊 Messages en Attente par Queue",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Débit des messages par seconde",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(rabbitmq_queue_messages_published_total{queue=~\".*reclamation.*\"}[1m])",
+          "interval": "",
+          "legendFormat": "📝 Pub: {{queue}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(rabbitmq_queue_messages_consumed_total{queue=~\".*reclamation.*\"}[1m])",
+          "interval": "",
+          "legendFormat": "📝 Con: {{queue}}",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(rabbitmq_queue_messages_published_total{queue=~\".*notification.*\"}[1m])",
+          "interval": "",
+          "legendFormat": "📧 Pub: {{queue}}",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(rabbitmq_queue_messages_consumed_total{queue=~\".*notification.*\"}[1m])",
+          "interval": "",
+          "legendFormat": "📧 Con: {{queue}}",
+          "refId": "D"
+        }
+      ],
+      "title": "⚡ Débit - Publish vs Consume (msg/sec)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Heatmap des topics les plus actifs",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "scaleDistribution": {
+              "type": "linear"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 4,
+      "options": {
+        "calculate": false,
+        "cellGap": 2,
+        "cellValues": {
+          "unit": "short"
+        },
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark-orange",
+          "mode": "scheme",
+          "reverse": false,
+          "scale": "exponential",
+          "scheme": "Spectral",
+          "steps": 64
+        },
+        "exemplars": {
+          "color": "rgba(255,0,255,0.7)"
+        },
+        "filterValues": {
+          "le": 1e-9
+        },
+        "legend": {
+          "show": false
+        },
+        "rowsFrame": {
+          "layout": "auto"
+        },
+        "tooltip": {
+          "show": true,
+          "yHistogram": false
+        },
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false,
+          "unit": "short"
+        }
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "rate(rabbitmq_queue_messages_published_total[5m])",
+          "format": "heatmap",
+          "interval": "",
+          "legendFormat": "{{queue}}",
+          "refId": "A"
+        }
+      ],
+      "title": "🔥 Heatmap - Activité des Topics",
+      "type": "heatmap"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Détail des exchanges et routing",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(rabbitmq_exchange_messages_published_in_total{exchange=\"events.exchange\"}[1m])",
+          "interval": "",
+          "legendFormat": "🔄 Events Exchange In",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(rabbitmq_exchange_messages_published_out_total{exchange=\"events.exchange\"}[1m])",
+          "interval": "",
+          "legendFormat": "🔄 Events Exchange Out",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(rabbitmq_exchange_messages_published_in_total{exchange=\"notifications.exchange\"}[1m])",
+          "interval": "",
+          "legendFormat": "📧 Notifications Exchange In",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(rabbitmq_exchange_messages_published_out_total{exchange=\"notifications.exchange\"}[1m])",
+          "interval": "",
+          "legendFormat": "📧 Notifications Exchange Out",
+          "refId": "D"
+        }
+      ],
+      "title": "🔀 Activité des Exchanges",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Erreurs et rejets de messages",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*[Ee]rr.*|.*[Rr]ej.*|.*[Ff]ail.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(rabbitmq_queue_messages_redelivered_total[1m])",
+          "interval": "",
+          "legendFormat": "🔄 Messages Renvoyés",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(rabbitmq_queue_messages_returned_total[1m])",
+          "interval": "",
+          "legendFormat": "↩️ Messages Retournés",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(rabbitmq_global_messages_unroutable_dropped_total[1m])",
+          "interval": "",
+          "legendFormat": "❌ Messages Non-Routables",
+          "refId": "C"
+        },
+        {
+          "expr": "rabbitmq_queue_messages_ready_ram",
+          "interval": "",
+          "legendFormat": "💾 Messages en RAM",
+          "refId": "D"
+        }
+      ],
+      "title": "⚠️ Erreurs et Problèmes de Routing",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Consommateurs par queue",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_consumers{queue=~\".*reclamation.*\"}",
+          "interval": "",
+          "legendFormat": "📝 {{queue}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rabbitmq_queue_consumers{queue=~\".*notification.*\"}",
+          "interval": "",
+          "legendFormat": "📧 {{queue}}",
+          "refId": "B"
+        },
+        {
+          "expr": "rabbitmq_queue_consumers{queue=~\".*audit.*\"}",
+          "interval": "",
+          "legendFormat": "📋 {{queue}}",
+          "refId": "C"
+        },
+        {
+          "expr": "rabbitmq_queue_consumers{queue=~\".*analytics.*\"}",
+          "interval": "",
+          "legendFormat": "📊 {{queue}}",
+          "refId": "D"
+        }
+      ],
+      "title": "👥 Consommateurs Actifs par Queue",
+      "type": "piechart"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Métriques de performance et latence",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Utilisation Mémoire (%)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "max",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Connexions/sec"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "reqps"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "rabbitmq_process_resident_memory_bytes / 1024 / 1024",
+          "interval": "",
+          "legendFormat": "Mémoire (MB)",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(rabbitmq_connections_opened_total[1m])",
+          "interval": "",
+          "legendFormat": "Connexions/sec",
+          "refId": "B"
+        },
+        {
+          "expr": "rabbitmq_erlang_processes_used / rabbitmq_erlang_processes_limit * 100",
+          "interval": "",
+          "legendFormat": "Utilisation Processus (%)",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(rabbitmq_io_read_time_microseconds_total[1m]) / 1000",
+          "interval": "",
+          "legendFormat": "Latence I/O Lecture",
+          "refId": "D"
+        },
+        {
+          "expr": "rate(rabbitmq_io_write_time_microseconds_total[1m]) / 1000",
+          "interval": "",
+          "legendFormat": "Latence I/O Écriture",
+          "refId": "E"
+        }
+      ],
+      "title": "⚡ Performance RabbitMQ",
+      "type": "stat"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [
+    "LAB7",
+    "RabbitMQ",
+    "Topics",
+    "Messaging",
+    "Queues"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(rabbitmq_queue_messages, queue)",
+        "description": "Filtrer par queue spécifique",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "Queue",
+        "multi": true,
+        "name": "queue",
+        "options": [],
+        "query": {
+          "query": "label_values(rabbitmq_queue_messages, queue)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(rabbitmq_exchange_messages_published_in_total, exchange)",
+        "description": "Filtrer par exchange",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "Exchange",
+        "multi": true,
+        "name": "exchange",
+        "options": [],
+        "query": {
+          "query": "label_values(rabbitmq_exchange_messages_published_in_total, exchange)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "🐰 RabbitMQ Topics Activity Dashboard",
+  "uid": "rabbitmq-topics-activity",
+  "version": 1
+}

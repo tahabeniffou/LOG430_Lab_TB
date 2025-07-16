@@ -1,0 +1,28 @@
+﻿{
+    "analysis":  {
+                     "pattern":  "Publication reguliere d\u0027evenements ReclamationCreated",
+                     "health":  "Excellent - Aucune perte d\u0027evenement detectee",
+                     "peak_activity":  "Derniers tests (5 evenements en 5 secondes)"
+                 },
+    "timestamp":  "2025-07-16 14:04:32",
+    "topics":  {
+                   "reclamation.events":  {
+                                              "events_published":  113,
+                                              "active":  true,
+                                              "last_activity":  "2025-07-16 14:04:32",
+                                              "type":  "topic"
+                                          }
+               },
+    "metrics":  {
+                    "performance":  {
+                                        "events_per_hour":  1695,
+                                        "success_rate":  100
+                                    },
+                    "total_events":  113,
+                    "http_requests":  {
+                                          "metrics_calls":  414,
+                                          "post_api":  113,
+                                          "health_checks":  5
+                                      }
+                }
+}

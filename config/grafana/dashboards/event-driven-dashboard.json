@@ -1,0 +1,860 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Dashboard pour visualiser l'activité des topics RabbitMQ et l'architecture événementielle LAB 7",
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "description": "Vue d'ensemble de l'architecture événementielle",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "events_published_total",
+          "interval": "",
+          "legendFormat": "Événements Publiés",
+          "refId": "A"
+        },
+        {
+          "expr": "events_consumed_total",
+          "interval": "",
+          "legendFormat": "Événements Consommés",
+          "refId": "B"
+        },
+        {
+          "expr": "events_failed_total",
+          "interval": "",
+          "legendFormat": "Événements Échoués",
+          "refId": "C"
+        }
+      ],
+      "title": "📡 Vue d'ensemble - Activité des Événements",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Statistiques RabbitMQ en temps réel",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages",
+          "interval": "",
+          "legendFormat": "Messages en Queue",
+          "refId": "A"
+        },
+        {
+          "expr": "rabbitmq_connections",
+          "interval": "",
+          "legendFormat": "Connexions Actives",
+          "refId": "B"
+        },
+        {
+          "expr": "rabbitmq_consumers",
+          "interval": "",
+          "legendFormat": "Consommateurs",
+          "refId": "C"
+        }
+      ],
+      "title": "🐰 RabbitMQ - État des Queues",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Détail des topics par type d'événement",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(events_published_total{type=\"reclamation.created\"}[5m])",
+          "interval": "",
+          "legendFormat": "📝 Réclamations Créées",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(events_published_total{type=\"reclamation.updated\"}[5m])",
+          "interval": "",
+          "legendFormat": "✏️ Réclamations Mises à Jour",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(events_published_total{type=\"reclamation.resolved\"}[5m])",
+          "interval": "",
+          "legendFormat": "✅ Réclamations Résolues",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(events_published_total{type=\"notification.sent\"}[5m])",
+          "interval": "",
+          "legendFormat": "📧 Notifications Envoyées",
+          "refId": "D"
+        },
+        {
+          "expr": "rate(events_published_total{type=\"audit.logged\"}[5m])",
+          "interval": "",
+          "legendFormat": "📋 Audit Logs",
+          "refId": "E"
+        }
+      ],
+      "title": "📊 Activité des Topics par Type d'Événement (taux/sec)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Performance et latence de l'Event Store",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "eventstore_write_latency_milliseconds",
+          "interval": "",
+          "legendFormat": "✍️ Latence Écriture",
+          "refId": "A"
+        },
+        {
+          "expr": "eventstore_read_latency_milliseconds",
+          "interval": "",
+          "legendFormat": "📖 Latence Lecture",
+          "refId": "B"
+        },
+        {
+          "expr": "eventstore_replay_latency_milliseconds",
+          "interval": "",
+          "legendFormat": "🔄 Latence Replay",
+          "refId": "C"
+        }
+      ],
+      "title": "⚡ Performance Event Store",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Métriques CQRS - Projections et Read Models",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "cqrs_projections_updated_total",
+          "interval": "",
+          "legendFormat": "🔄 Projections Mises à Jour",
+          "refId": "A"
+        },
+        {
+          "expr": "cqrs_read_models_queries_total",
+          "interval": "",
+          "legendFormat": "🔍 Requêtes Read Models",
+          "refId": "B"
+        },
+        {
+          "expr": "cqrs_commands_processed_total",
+          "interval": "",
+          "legendFormat": "⚡ Commandes Traitées",
+          "refId": "C"
+        }
+      ],
+      "title": "🏗️ CQRS - Projections et Read Models",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Santé et disponibilité des services événementiels",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "DOWN"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "UP"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.0",
+      "targets": [
+        {
+          "expr": "up{job=\"reclamation-service\"}",
+          "interval": "",
+          "legendFormat": "📝 Reclamation Service",
+          "refId": "A"
+        },
+        {
+          "expr": "up{job=\"notification-service\"}",
+          "interval": "",
+          "legendFormat": "📧 Notification Service",
+          "refId": "B"
+        },
+        {
+          "expr": "up{job=\"audit-service\"}",
+          "interval": "",
+          "legendFormat": "📋 Audit Service",
+          "refId": "C"
+        },
+        {
+          "expr": "up{job=\"analytics-service\"}",
+          "interval": "",
+          "legendFormat": "📊 Analytics Service",
+          "refId": "D"
+        },
+        {
+          "expr": "up{job=\"rabbitmq\"}",
+          "interval": "",
+          "legendFormat": "🐰 RabbitMQ",
+          "refId": "E"
+        },
+        {
+          "expr": "up{job=\"postgres-eventstore\"}",
+          "interval": "",
+          "legendFormat": "🗄️ Event Store",
+          "refId": "F"
+        }
+      ],
+      "title": "💚 État de Santé des Services",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Distribution des événements par topic RabbitMQ",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages{queue=\"reclamation.created\"}",
+          "interval": "",
+          "legendFormat": "📝 Réclamations",
+          "refId": "A"
+        },
+        {
+          "expr": "rabbitmq_queue_messages{queue=\"notification.email\"}",
+          "interval": "",
+          "legendFormat": "📧 Notifications",
+          "refId": "B"
+        },
+        {
+          "expr": "rabbitmq_queue_messages{queue=\"audit.events\"}",
+          "interval": "",
+          "legendFormat": "📋 Audit",
+          "refId": "C"
+        },
+        {
+          "expr": "rabbitmq_queue_messages{queue=\"analytics.events\"}",
+          "interval": "",
+          "legendFormat": "📊 Analytics",
+          "refId": "D"
+        }
+      ],
+      "title": "🥧 Distribution des Messages par Topic",
+      "type": "piechart"
+    },
+    {
+      "datasource": "Prometheus",
+      "description": "Timeline des événements avec volume et erreurs",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "❌ Erreurs"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "expr": "increase(events_published_total[1m])",
+          "interval": "",
+          "legendFormat": "✅ Événements Publiés",
+          "refId": "A"
+        },
+        {
+          "expr": "increase(events_consumed_total[1m])",
+          "interval": "",
+          "legendFormat": "📥 Événements Consommés",
+          "refId": "B"
+        },
+        {
+          "expr": "increase(events_failed_total[1m])",
+          "interval": "",
+          "legendFormat": "❌ Erreurs",
+          "refId": "C"
+        }
+      ],
+      "title": "📈 Timeline - Volume d'Événements (par minute)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 27,
+  "style": "dark",
+  "tags": [
+    "LAB7",
+    "Event-Driven",
+    "RabbitMQ",
+    "CQRS",
+    "Event-Sourcing"
+  ],
+  "templating": {
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(events_published_total, service)",
+        "description": "Sélectionner un service spécifique",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": {
+          "query": "label_values(events_published_total, service)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "allValue": null,
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(events_published_total, type)",
+        "description": "Filtrer par type d'événement",
+        "error": null,
+        "hide": 0,
+        "includeAll": true,
+        "label": "Type Événement",
+        "multi": true,
+        "name": "event_type",
+        "options": [],
+        "query": {
+          "query": "label_values(events_published_total, type)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "📡 LAB 7 - Event-Driven Architecture Dashboard",
+  "uid": "lab7-event-driven",
+  "version": 1
+}

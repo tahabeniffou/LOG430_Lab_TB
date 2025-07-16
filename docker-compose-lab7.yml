@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq-broker
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - pos-network
+
+  # Event Store Database
+  postgres-eventstore:
+    image: postgres:15
+    container_name: postgres-eventstore
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: eventstore
+      POSTGRES_USER: eventstore_user
+      POSTGRES_PASSWORD: eventstore_pass
+    volumes:
+      - postgres_eventstore_data:/var/lib/postgresql/data
+      - ./config/eventstore/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - pos-network
+
+  # Reclamation Service
+  reclamation-service:
+    build:
+      context: ./microservices/reclamation-service
+      dockerfile: Dockerfile
+    container_name: reclamation-service
+    ports:
+      - "8011:8011"
+    environment:
+      NODE_ENV: production
+      PORT: 8011
+      EVENTSTORE_URL: postgresql://eventstore_user:eventstore_pass@postgres-eventstore:5432/eventstore
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+      - postgres-eventstore
+    networks:
+      - pos-network
+
+volumes:
+  rabbitmq_data:
+  postgres_eventstore_data:
+
+networks:
+  pos-network:
+    external: true
