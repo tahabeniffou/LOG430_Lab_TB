@@ -43,8 +43,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.26.0",
+    "@faker-js/faker": "^9.9.0",
     "@jest/globals": "^30.0.4",
     "@types/jest": "^29.5.0",
+    "axios": "^1.10.0",
     "eslint": "^9.26.0",
     "globals": "^16.1.0",
     "jest": "^30.0.4",
@@ -64,7 +66,6 @@
   },
   "homepage": "https://github.com/tahabeniffou/LOG430_Lab0_TB#readme",
   "dependencies": {
-    "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.5",

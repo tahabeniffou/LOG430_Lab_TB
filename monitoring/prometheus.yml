@@ -49,21 +49,69 @@ scrape_configs:
     metrics_path: '/metrics'
     scrape_interval: 30s
 
-  # Saga Orchestrator
-  - job_name: 'saga-orchestrator'
+  # ============================================================
+  # SAGA CHOREOGRAPHY SERVICES - LAB 7
+  # ============================================================
+  
+  # Service de Validation Saga
+  - job_name: 'validation-service'
     static_configs:
-      - targets: ['host.docker.internal:8010']
+      - targets: ['validation-service-saga:8012']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      saga: ['choreography']
+
+  # Service de Notification Saga  
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['notification-service-saga:8013']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      saga: ['choreography']
+
+  # Service de Paiement Saga
+  - job_name: 'payment-service'
+    static_configs:
+      - targets: ['payment-service-saga:8014']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      saga: ['choreography']
+
+  # Service de Réclamation Saga
+  - job_name: 'reclamation-service'
+    static_configs:
+      - targets: ['reclamation-service-saga:8015']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      saga: ['choreography']
+
+  # RabbitMQ pour Saga Choreography
+  - job_name: 'rabbitmq-saga'
+    static_configs:
+      - targets: ['rabbitmq-saga:15692']
     metrics_path: '/metrics'
     scrape_interval: 15s
 
-  # Service de Réclamations (Event-Driven)
-  - job_name: 'reclamation-service'
+  # PostgreSQL Databases Saga
+  - job_name: 'postgres-saga'
     static_configs:
-      - targets: ['host.docker.internal:8011']
+      - targets: ['postgres-validation-saga:5432', 'postgres-notification-saga:5432', 'postgres-payment-saga:5432', 'postgres-reclamation-saga:5432']
     metrics_path: '/metrics'
-    scrape_interval: 10s
+    scrape_interval: 30s
 
-  # Node Exporter
+  # Node Exporter pour métriques système
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter-saga:9100']

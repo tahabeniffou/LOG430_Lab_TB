@@ -1,0 +1,225 @@
+networks:
+  pos-network:
+    driver: bridge
+
+volumes:
+  postgres-validation-data:
+  postgres-notification-data:
+  postgres-payment-data:
+  postgres-reclamation-data:
+  rabbitmq-saga-data:
+
+services:
+  # =============================================================
+  # SERVICES SAGA CHOREOGRAPHIE
+  # =============================================================
+  
+  # Base de données pour Validation Service
+  postgres-validation:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: validation_db
+      POSTGRES_USER: validation_user
+      POSTGRES_PASSWORD: validation_password
+    volumes:
+      - postgres-validation-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    ports:
+      - "5438:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U validation_user -d validation_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Base de données pour Notification Service
+  postgres-notification:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: notification_user
+      POSTGRES_PASSWORD: notification_password
+    volumes:
+      - postgres-notification-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    ports:
+      - "5439:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notification_user -d notification_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Base de données pour Payment Service
+  postgres-payment:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment_password
+    volumes:
+      - postgres-payment-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    ports:
+      - "5440:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_user -d payment_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Service de Validation pour Saga
+  validation-service:
+    build:
+      context: ./microservices/validation-service
+      dockerfile: Dockerfile
+    ports:
+      - "8012:8012"
+    environment:
+      - PORT=8012
+      - NODE_ENV=production
+      - RABBITMQ_URL=amqp://rabbitmq:rabbitmq@rabbitmq:5672
+      - DATABASE_URL=postgresql://validation_user:validation_password@postgres-validation:5432/validation_db
+      - VALIDATION_FAILURE_RATE=0.05
+    networks:
+      - pos-network
+    depends_on:
+      postgres-validation:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Service de Notification pour Saga
+  notification-service:
+    build:
+      context: ./microservices/notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "8013:8013"
+    environment:
+      - PORT=8013
+      - NODE_ENV=production
+      - RABBITMQ_URL=amqp://rabbitmq:rabbitmq@rabbitmq:5672
+      - DATABASE_URL=postgresql://notification_user:notification_password@postgres-notification:5432/notification_db
+      - EMAIL_PROVIDER=simulation
+    networks:
+      - pos-network
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Service de Paiement pour Saga
+  payment-service:
+    build:
+      context: ./microservices/payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "8014:8014"
+    environment:
+      - PORT=8014
+      - NODE_ENV=production
+      - RABBITMQ_URL=amqp://rabbitmq:rabbitmq@rabbitmq:5672
+      - DATABASE_URL=postgresql://payment_user:payment_password@postgres-payment:5432/payment_db
+      - PAYMENT_FAILURE_RATE=0.07
+      - BANK_API_URL=https://api.bank.simulation.com
+    networks:
+      - pos-network
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Service de Réclamation avec support Saga
+  reclamation-service-saga:
+    build:
+      context: ./microservices/reclamation-service
+      dockerfile: Dockerfile.saga
+    ports:
+      - "8011:8011"
+    environment:
+      - PORT=8011
+      - NODE_ENV=production
+      - RABBITMQ_URL=amqp://rabbitmq:rabbitmq@rabbitmq:5672
+      - DATABASE_URL=postgresql://reclamation_user:reclamation_password@postgres-reclamation:5432/reclamation_db
+      - EVENTSTORE_URL=postgresql://reclamation_user:reclamation_password@postgres-reclamation:5432/reclamation_db
+    networks:
+      - pos-network
+    depends_on:
+      postgres-reclamation:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # RabbitMQ pour coordination des événements
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+      RABBITMQ_DEFAULT_VHOST: /
+    volumes:
+      - rabbitmq-saga-data:/var/lib/rabbitmq
+    networks:
+      - pos-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Base de données pour Reclamation Service
+  postgres-reclamation:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: reclamation_db
+      POSTGRES_USER: reclamation_user
+      POSTGRES_PASSWORD: reclamation_password
+    volumes:
+      - postgres-reclamation-data:/var/lib/postgresql/data
+    networks:
+      - pos-network
+    ports:
+      - "5437:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reclamation_user -d reclamation_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

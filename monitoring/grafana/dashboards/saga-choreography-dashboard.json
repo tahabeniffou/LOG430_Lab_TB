@@ -1,0 +1,377 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "LAB 7 - Saga Choreography Dashboard",
+    "tags": ["saga", "choreography", "microservices", "lab7"],
+    "timezone": "browser",
+    "refresh": "5s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Vue d'ensemble Saga",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(saga_started_total)",
+            "legendFormat": "Sagas Démarrées"
+          },
+          {
+            "expr": "sum(saga_completed_total)",
+            "legendFormat": "Sagas Réussies"
+          },
+          {
+            "expr": "sum(saga_failed_total)",
+            "legendFormat": "Sagas Échouées"
+          },
+          {
+            "expr": "sum(saga_completed_total) / sum(saga_started_total) * 100",
+            "legendFormat": "Taux de Succès (%)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "mappings": [],
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 70},
+                {"color": "green", "value": 90}
+              ]
+            },
+            "unit": "short"
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Flux de Saga en Temps Réel",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(saga_started_total[1m])",
+            "legendFormat": "Démarrées/min"
+          },
+          {
+            "expr": "rate(saga_completed_total[1m])",
+            "legendFormat": "Réussies/min"
+          },
+          {
+            "expr": "rate(saga_failed_total[1m])",
+            "legendFormat": "Échouées/min"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {"legend": false, "tooltip": false, "vis": false},
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "pointSize": 5,
+              "scaleDistribution": {"type": "linear"},
+              "showPoints": "never",
+              "spanNulls": false
+            },
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Distribution des Échecs par Service",
+        "type": "piechart",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "sum by (failed_at_service) (saga_failed_total)",
+            "legendFormat": "{{failed_at_service}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "hideFrom": {"legend": false, "tooltip": false, "vis": false}
+            },
+            "mappings": [],
+            "unit": "short"
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "pieType": "pie",
+          "tooltip": {"mode": "single"},
+          "legend": {
+            "displayMode": "list",
+            "placement": "right",
+            "values": ["value", "percent"]
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Durée des Sagas",
+        "type": "histogram",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(saga_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(saga_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(saga_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Événements RabbitMQ",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "rate(saga_events_published_total[1m])",
+            "legendFormat": "Publiés/min"
+          },
+          {
+            "expr": "rate(saga_events_consumed_total[1m])",
+            "legendFormat": "Consommés/min"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Métriques par Service - Validation",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "rate(saga_validations_total[1m])",
+            "legendFormat": "{{result}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Métriques par Service - Notification",
+        "type": "timeseries", 
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 24},
+        "targets": [
+          {
+            "expr": "rate(saga_notifications_total[1m])",
+            "legendFormat": "{{delivery_status}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Métriques par Service - Paiement",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 24},
+        "targets": [
+          {
+            "expr": "rate(saga_payments_total[1m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Métriques par Service - Réclamation",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 24},
+        "targets": [
+          {
+            "expr": "rate(saga_reclamations_total[1m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Health Status Services Saga",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 24, "x": 0, "y": 30},
+        "targets": [
+          {
+            "expr": "up{job=\"validation-service\"}",
+            "legendFormat": "Validation"
+          },
+          {
+            "expr": "up{job=\"notification-service\"}",
+            "legendFormat": "Notification"
+          },
+          {
+            "expr": "up{job=\"payment-service\"}",
+            "legendFormat": "Payment"
+          },
+          {
+            "expr": "up{job=\"reclamation-service\"}",
+            "legendFormat": "Reclamation"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            },
+            "mappings": [
+              {"type": "value", "value": "0", "text": "DOWN"},
+              {"type": "value", "value": "1", "text": "UP"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Analyse des Échecs par Raison",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 34},
+        "targets": [
+          {
+            "expr": "sum by (failure_reason) (saga_failed_total)",
+            "format": "table",
+            "legendFormat": ""
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 5},
+                {"color": "red", "value": 10}
+              ]
+            }
+          }
+        },
+        "options": {
+          "showHeader": true
+        }
+      },
+      {
+        "id": 12,
+        "title": "Compensations Exécutées",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 34},
+        "targets": [
+          {
+            "expr": "rate(saga_compensations_executed_total[1m])",
+            "legendFormat": "{{service}} - {{compensation_type}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps"
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "service",
+          "type": "query",
+          "query": "label_values(saga_started_total, service)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "saga_type",
+          "type": "query", 
+          "query": "label_values(saga_started_total, saga_type)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "enable": true,
+          "iconColor": "blue",
+          "query": "ALERTS{alertname=\"DeploymentStarted\"}"
+        }
+      ]
+    }
+  }
+}

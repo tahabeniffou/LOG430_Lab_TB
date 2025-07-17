@@ -36,6 +36,61 @@ class EventStore {
         }
     }
 
+    async init() {
+        await this.connect();
+        await this.initializeDatabase();
+    }
+
+    async initializeDatabase() {
+        const client = await this.pool.connect();
+        try {
+            // Créer les tables si elles n'existent pas
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS event_store (
+                    id UUID PRIMARY KEY,
+                    aggregate_id UUID NOT NULL,
+                    aggregate_type VARCHAR(255) NOT NULL,
+                    event_type VARCHAR(255) NOT NULL,
+                    event_version INTEGER NOT NULL,
+                    event_data JSONB NOT NULL,
+                    event_metadata JSONB,
+                    occurred_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(aggregate_id, event_version)
+                );
+            `);
+
+            await client.query(`
+                CREATE INDEX IF NOT EXISTS idx_event_store_aggregate 
+                ON event_store(aggregate_id, event_version);
+            `);
+
+            await client.query(`
+                CREATE INDEX IF NOT EXISTS idx_event_store_type 
+                ON event_store(aggregate_type, event_type);
+            `);
+
+            // Fonction pour obtenir la version d'un agrégat
+            await client.query(`
+                CREATE OR REPLACE FUNCTION get_aggregate_version(agg_id UUID)
+                RETURNS INTEGER AS $$
+                BEGIN
+                    RETURN COALESCE(
+                        (SELECT MAX(event_version) FROM event_store WHERE aggregate_id = agg_id),
+                        0
+                    );
+                END;
+                $$ LANGUAGE plpgsql;
+            `);
+
+            this.logger.info('Event Store database initialized successfully');
+        } catch (error) {
+            this.logger.error('Failed to initialize Event Store database', error);
+            throw error;
+        } finally {
+            client.release();
+        }
+    }
+
     async disconnect() {
         if (this.pool) {
             await this.pool.end();

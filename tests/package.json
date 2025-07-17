@@ -1,0 +1,19 @@
+{
+  "name": "saga-test-dependencies",
+  "version": "1.0.0",
+  "description": "Dependencies for saga choreography testing",
+  "main": "saga-choreography-test.js",
+  "scripts": {
+    "test": "node saga-choreography-test.js",
+    "test:verbose": "node saga-choreography-test.js --verbose",
+    "test:performance": "node saga-choreography-test.js --performance"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {},
+  "keywords": ["saga", "choreography", "microservices", "testing"],
+  "author": "LAB430 Team",
+  "license": "MIT"
+}

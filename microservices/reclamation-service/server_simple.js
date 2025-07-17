@@ -85,7 +85,7 @@ async function initializeComponents() {
 
         // Event Store avec la classe existante
         eventStore = new EventStore({
-            connectionString: process.env.EVENTSTORE_URL || 'postgresql://eventstore_user:eventstore_pass@postgres-eventstore:5432/eventstore',
+            connectionString: process.env.DATABASE_URL || process.env.EVENTSTORE_URL || 'postgresql://reclamation_user:reclamation_password@postgres-reclamation-saga:5432/reclamation_db',
             logger
         });
         await eventStore.connect();
