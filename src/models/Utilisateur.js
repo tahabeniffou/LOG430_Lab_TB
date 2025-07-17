@@ -1,10 +1,68 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('./index');
+const { Model, DataTypes } = require('sequelize');
+const bcrypt = require('bcryptjs');
 
-const Utilisateur = sequelize.define('Utilisateur', {
-  nom: DataTypes.STRING,
-  role: DataTypes.STRING,
-  magasinId: { type: DataTypes.INTEGER, allowNull: false }
-});
+module.exports = (sequelize, DataTypes) => {
+  class Utilisateur extends Model {
+    static associate(models) {
+      Utilisateur.belongsTo(models.Magasin, { foreignKey: 'magasinId', as: 'magasin' });
+      // Note: L'association Vente est gérée par vente-service
+    }
 
-module.exports = Utilisateur;
+    async validerMotDePasse(motDePasse) {
+      return bcrypt.compare(motDePasse, this.motDePasse);
+    }
+  }
+
+  Utilisateur.init({
+    nom: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    prenom: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    courriel: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true
+      }
+    },
+    role: {
+      type: DataTypes.STRING,
+      allowNull: false
+    }, // ex: 'vendeur', 'admin'
+    nomUtilisateur: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: false
+    },
+    motDePasse: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    magasinId: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // Permet NULL pour les admins centraux
+      references: {
+        model: 'Magasins',
+        key: 'id'
+      }
+    }
+  }, {
+    sequelize,
+    modelName: 'Utilisateur',
+    hooks: {
+      beforeCreate: async (utilisateur) => {
+        if (utilisateur.motDePasse) {
+          const salt = await bcrypt.genSalt(10);
+          utilisateur.motDePasse = await bcrypt.hash(utilisateur.motDePasse, salt);
+        }
+      }
+    }
+  });
+
+  return Utilisateur;
+};

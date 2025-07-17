@@ -1,0 +1,76 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Kong Gateway
+  - job_name: 'kong'
+    static_configs:
+      - targets: ['kong:8001']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Microservices Produit
+  - job_name: 'produit-service'
+    static_configs:
+      - targets: ['produit-service-1:3001', 'produit-service-2:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Microservices Stock
+  - job_name: 'stock-service'
+    static_configs:
+      - targets: ['stock-service-1:3002', 'stock-service-2:3002']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Microservices Vente
+  - job_name: 'vente-service'
+    static_configs:
+      - targets: ['vente-service-1:3003', 'vente-service-2:3003']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Microservices Reporting
+  - job_name: 'reporting-service'
+    static_configs:
+      - targets: ['reporting-service-1:3004', 'reporting-service-2:3004']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Service Legacy
+  - job_name: 'legacy-service'
+    static_configs:
+      - targets: ['legacy-service:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # PostgreSQL Databases
+  - job_name: 'postgres-produit'
+    static_configs:
+      - targets: ['postgres-produit:5432']
+    scrape_interval: 60s
+
+  - job_name: 'postgres-stock'
+    static_configs:
+      - targets: ['postgres-stock:5432']
+    scrape_interval: 60s
+
+  - job_name: 'postgres-vente'
+    static_configs:
+      - targets: ['postgres-vente:5432']
+    scrape_interval: 60s
+
+  - job_name: 'postgres-reporting'
+    static_configs:
+      - targets: ['postgres-reporting:5432']
+    scrape_interval: 60s
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

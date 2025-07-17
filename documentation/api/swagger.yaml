@@ -1,0 +1,823 @@
+openapi: 3.0.0
+info:
+  title: POS Microservices API
+  description: |
+    API Gateway pour système POS multi-magasins avec architecture microservices.
+    
+    ## Architecture
+    - **7 microservices** avec 2 instances chacun
+    - **Kong API Gateway** avec load balancing
+    - **PostgreSQL** par service pour isolation données
+    - **Monitoring** Prometheus + Grafana
+
+    ## Authentification
+    - **JWT** pour services e-commerce (compte, panier, checkout)
+    - **CORS** configuré pour applications web
+    
+  version: 1.0.0
+  contact:
+    name: Équipe Architecture LOG430
+    email: support@pos-system.com
+  license:
+    name: ETS Academic License
+    url: https://etsmtl.ca
+
+servers:
+  - url: http://localhost:8000
+    description: Kong API Gateway (Production)
+  - url: http://localhost:3001
+    description: Service Produit Direct (Dev)
+
+tags:
+  - name: Produits
+    description: Gestion catalogue produits
+  - name: Stock
+    description: Gestion inventaire et mouvements
+  - name: Ventes
+    description: Transactions et historique
+  - name: Reporting
+    description: Analytics et rapports
+  - name: E-commerce
+    description: Services client e-commerce
+  - name: Infrastructure
+    description: Health checks et monitoring
+
+paths:
+  /api/produits:
+    get:
+      tags: [Produits]
+      summary: Liste tous les produits
+      description: Retourne la liste complète des produits avec pagination
+      parameters:
+        - name: page
+          in: query
+          description: Numéro de page (défaut 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Nombre d'éléments par page (défaut 10)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Liste des produits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  count:
+                    type: integer
+                    example: 5
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Produit'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Produits]
+      summary: Créer un nouveau produit
+      description: Ajoute un produit au catalogue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProduitInput'
+      responses:
+        '201':
+          description: Produit créé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Produit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/produits/{id}:
+    get:
+      tags: [Produits]
+      summary: Détails d'un produit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID du produit
+      responses:
+        '200':
+          description: Détails du produit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Produit'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/stocks:
+    get:
+      tags: [Stock]
+      summary: Consulter l'inventaire complet
+      description: Retourne l'état du stock pour tous les produits
+      responses:
+        '200':
+          description: État du stock
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Stock'
+
+  /api/stocks/{produitId}:
+    get:
+      tags: [Stock]
+      summary: Stock d'un produit spécifique
+      parameters:
+        - name: produitId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Stock du produit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+    post:
+      tags: [Stock]
+      summary: Ajuster le stock
+      parameters:
+        - name: produitId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdjustment'
+      responses:
+        '200':
+          description: Stock mis à jour
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/ventes:
+    get:
+      tags: [Ventes]
+      summary: Historique des ventes
+      description: Liste des transactions avec filtres optionnels
+      parameters:
+        - name: date_debut
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_fin
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Liste des ventes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vente'
+    post:
+      tags: [Ventes]
+      summary: Enregistrer une vente
+      description: Créer une nouvelle transaction de vente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VenteInput'
+      responses:
+        '201':
+          description: Vente enregistrée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Vente'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/reports:
+    get:
+      tags: [Reporting]
+      summary: Rapports d'activité
+      description: Analytics et KPIs du système
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, yearly]
+          description: Type de rapport
+        - name: periode
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Période pour le rapport
+      responses:
+        '200':
+          description: Données du rapport
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Report'
+
+  /api/comptes:
+    get:
+      tags: [E-commerce]
+      summary: Liste des comptes clients
+      description: Gestion des comptes utilisateurs e-commerce
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des comptes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Compte'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [E-commerce]
+      summary: Créer un compte client
+      description: Inscription nouveau client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompteInput'
+      responses:
+        '201':
+          description: Compte créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Compte'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email déjà utilisé
+
+  /api/comptes/login:
+    post:
+      tags: [E-commerce]
+      summary: Authentification client
+      description: Connexion client avec JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, motDePasse]
+              properties:
+                email:
+                  type: string
+                  format: email
+                motDePasse:
+                  type: string
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+                    description: JWT token
+                  user:
+                    $ref: '#/components/schemas/Compte'
+        '401':
+          description: Identifiants invalides
+
+  /api/paniers:
+    get:
+      tags: [E-commerce]
+      summary: Consulter les paniers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des paniers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Panier'
+    post:
+      tags: [E-commerce]
+      summary: Créer/modifier un panier
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PanierInput'
+      responses:
+        '201':
+          description: Panier créé/modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Panier'
+
+  /api/checkout:
+    post:
+      tags: [E-commerce]
+      summary: Valider une commande
+      description: Processus de checkout complet
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutInput'
+      responses:
+        '201':
+          description: Commande validée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  commandeId:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Commande'
+        '400':
+          description: Erreur validation
+        '402':
+          description: Paiement requis
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Produit:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nom:
+          type: string
+          example: "MacBook Pro"
+        description:
+          type: string
+          example: "Ordinateur portable professionnel"
+        prix:
+          type: number
+          format: decimal
+          example: 2499.99
+        categorie:
+          type: string
+          example: "Électronique"
+        actif:
+          type: boolean
+          example: true
+        dateCreation:
+          type: string
+          format: date-time
+        dateMiseAJour:
+          type: string
+          format: date-time
+
+    ProduitInput:
+      type: object
+      required: [nom, prix]
+      properties:
+        nom:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        prix:
+          type: number
+          format: decimal
+          minimum: 0
+        categorie:
+          type: string
+          maxLength: 50
+
+    Stock:
+      type: object
+      properties:
+        id:
+          type: integer
+        produitId:
+          type: integer
+        quantite:
+          type: integer
+          minimum: 0
+        seuilAlerte:
+          type: integer
+          minimum: 0
+        derniereMiseAJour:
+          type: string
+          format: date-time
+        produit:
+          $ref: '#/components/schemas/Produit'
+
+    StockAdjustment:
+      type: object
+      required: [quantite, type]
+      properties:
+        quantite:
+          type: integer
+          description: Quantité à ajouter/retirer
+        type:
+          type: string
+          enum: [ajout, retrait, inventaire]
+        motif:
+          type: string
+          description: Raison de l'ajustement
+
+    Vente:
+      type: object
+      properties:
+        id:
+          type: integer
+        produits:
+          type: array
+          items:
+            type: object
+            properties:
+              produitId:
+                type: integer
+              nom:
+                type: string
+              quantite:
+                type: integer
+              prixUnitaire:
+                type: number
+              sousTotal:
+                type: number
+        total:
+          type: number
+          format: decimal
+        tva:
+          type: number
+          format: decimal
+        methodePaiement:
+          type: string
+          enum: [especes, carte, cheque]
+        dateVente:
+          type: string
+          format: date-time
+        caissier:
+          type: string
+
+    VenteInput:
+      type: object
+      required: [produits, total]
+      properties:
+        produits:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [produitId, quantite, prix]
+            properties:
+              produitId:
+                type: integer
+              quantite:
+                type: integer
+                minimum: 1
+              prix:
+                type: number
+                minimum: 0
+        total:
+          type: number
+          format: decimal
+          minimum: 0
+        methodePaiement:
+          type: string
+          enum: [especes, carte, cheque]
+          default: carte
+        caissier:
+          type: string
+
+    Report:
+      type: object
+      properties:
+        periode:
+          type: string
+          format: date
+        type:
+          type: string
+        metriques:
+          type: object
+          properties:
+            chiffreAffaires:
+              type: number
+            nombreVentes:
+              type: integer
+            panierMoyen:
+              type: number
+            topProduits:
+              type: array
+              items:
+                type: object
+                properties:
+                  produitId:
+                    type: integer
+                  nom:
+                    type: string
+                  quantiteVendue:
+                    type: integer
+
+    Compte:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        nom:
+          type: string
+        prenom:
+          type: string
+        dateInscription:
+          type: string
+          format: date-time
+        statut:
+          type: string
+          enum: [actif, inactif, suspendu]
+
+    CompteInput:
+      type: object
+      required: [email, motDePasse, nom]
+      properties:
+        email:
+          type: string
+          format: email
+        motDePasse:
+          type: string
+          minLength: 8
+        nom:
+          type: string
+          maxLength: 50
+        prenom:
+          type: string
+          maxLength: 50
+
+    Panier:
+      type: object
+      properties:
+        id:
+          type: integer
+        compteId:
+          type: integer
+        articles:
+          type: array
+          items:
+            type: object
+            properties:
+              produitId:
+                type: integer
+              nom:
+                type: string
+              quantite:
+                type: integer
+              prixUnitaire:
+                type: number
+              sousTotal:
+                type: number
+        total:
+          type: number
+          format: decimal
+        dateCreation:
+          type: string
+          format: date-time
+        dateMiseAJour:
+          type: string
+          format: date-time
+
+    PanierInput:
+      type: object
+      required: [compteId]
+      properties:
+        compteId:
+          type: integer
+        produits:
+          type: array
+          items:
+            type: object
+            required: [produitId, quantite]
+            properties:
+              produitId:
+                type: integer
+              quantite:
+                type: integer
+                minimum: 1
+
+    CheckoutInput:
+      type: object
+      required: [panierId, adresse, paiement]
+      properties:
+        panierId:
+          type: integer
+        adresse:
+          type: object
+          required: [rue, ville, codePostal]
+          properties:
+            rue:
+              type: string
+            ville:
+              type: string
+            codePostal:
+              type: string
+            pays:
+              type: string
+              default: Canada
+        paiement:
+          type: object
+          required: [type]
+          properties:
+            type:
+              type: string
+              enum: [carte, paypal, virement]
+            numero:
+              type: string
+              description: Numéro de carte (masqué)
+
+    Commande:
+      type: object
+      properties:
+        id:
+          type: string
+        compteId:
+          type: integer
+        statut:
+          type: string
+          enum: [pending, confirmed, shipped, delivered, cancelled]
+        articles:
+          type: array
+          items:
+            type: object
+        total:
+          type: number
+        adresse:
+          type: object
+        dateCommande:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Données invalides"
+
+    Unauthorized:
+      description: Non autorisé
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Token JWT requis"
+
+    NotFound:
+      description: Ressource non trouvée
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Ressource non trouvée"
+
+    ServerError:
+      description: Erreur serveur
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Erreur interne du serveur"

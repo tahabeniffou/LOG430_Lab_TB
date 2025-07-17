@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Test Dashboard Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .metric {
+            display: inline-block;
+            margin: 10px;
+            padding: 20px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 150px;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        .metric-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Dashboard POS - Test Simple</h1>
+            <p>Système Microservices LOG430</p>
+        </div>
+        
+        <div class="status">
+            ✅ Page chargée avec succès ! Heure: <span id="time"></span>
+        </div>
+        
+        <div class="metric">
+            <div class="metric-value">5/5</div>
+            <div class="metric-label">Services UP</div>
+        </div>
+        
+        <div class="metric">
+            <div class="metric-value" id="rps">25.3</div>
+            <div class="metric-label">Requêtes/sec</div>
+        </div>
+        
+        <div class="metric">
+            <div class="metric-value">28ms</div>
+            <div class="metric-label">Latence</div>
+        </div>
+        
+        <div class="metric">
+            <div class="metric-value">99.8%</div>
+            <div class="metric-label">Disponibilité</div>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h3>📊 Services Actifs:</h3>
+            <div class="status">🌐 API Gateway (9000) - ✅ Opérationnel</div>
+            <div class="status">📦 Service Produit (3001) - ✅ Opérationnel</div>
+            <div class="status">📊 Service Stock (3002) - ✅ Opérationnel</div>
+            <div class="status">💰 Service Vente (3004) - ✅ Opérationnel</div>
+            <div class="status">📈 Service Reporting (3005) - ✅ Opérationnel</div>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center; color: #666;">
+            <p><strong>Architecture Microservices</strong></p>
+            <p>Monitoring temps réel - LOG430 Lab</p>
+            <p>Status: <span style="color: green;">🟢 OPÉRATIONNEL</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Test que JavaScript fonctionne
+        console.log('Dashboard simple chargé');
+        
+        // Mise à jour de l'heure
+        function updateTime() {
+            document.getElementById('time').textContent = new Date().toLocaleTimeString();
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Simulation données qui bougent
+        setInterval(() => {
+            const newRps = (Math.random() * 10 + 20).toFixed(1);
+            document.getElementById('rps').textContent = newRps;
+        }, 3000);
+        
+        alert('✅ Dashboard test chargé ! Les métriques vont bouger toutes les 3 secondes.');
+    </script>
+</body>
+</html>

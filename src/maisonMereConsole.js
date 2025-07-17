@@ -1,83 +1,192 @@
 const inquirer = require('inquirer');
-const axios = require('axios');
+const chalk = require('chalk');
+const { sequelize } = require('./models'); // Garde seulement les entités non extraites
 const Table = require('cli-table3');
-const chalk = require('chalk').default;
+const ApiClient = require('./services/ApiClient');
 
-const API_URL = 'http://api:3000';
+let apiClient = null;
 
-function resetConsole() {
-  console.clear();
+// Initialisation du client API
+function initApiClient() {
+  const gatewayUrl = process.env.API_GATEWAY_URL || 'http://localhost:8000';
+  apiClient = new ApiClient(gatewayUrl);
+  console.log(chalk.cyan(`🔗 Connexion à l'API Gateway: ${gatewayUrl}`));
 }
 
-async function mainMenu() {
-  while (true) {
-    resetConsole();
-    const { action } = await inquirer.prompt([{
+// --- Fonctions de la console Maison Mère ---
+
+async function showMainMenu() {
+  const { action } = await inquirer.prompt([
+    {
       type: 'list',
       name: 'action',
-      message: chalk.bold(chalk.cyan('=== Maison Mère ===')),
+      message: 'Menu Principal - Maison Mère (Version Microservices)',
       choices: [
-        { name: 'Générer un rapport consolidé des ventes', value: 'rapport' },
-        { name: 'Visualiser le tableau de bord des magasins', value: 'dashboard' },
-        { name: 'Quitter', value: 'exit' }
+        { name: '📊  Afficher les stocks globaux', value: 'global_stock' },
+        { name: '📈  Générer un rapport des ventes', value: 'sales_report' },
+        { name: '🚚  Voir les demandes de réapprovisionnement', value: 'view_reappro' },
+        new inquirer.Separator(),
+        { name: '🚪  Quitter', value: 'exit' }
       ]
-    }]);
-    if (action === 'rapport') {
-      const { data: rapport } = await axios.get(`${API_URL}/maison-mere/rapport`);
-      console.log(chalk.bold(chalk.cyan('\n=== Rapport consolidé des ventes ===\n')));
-      rapport.forEach(r => {
-        console.log(chalk.bold(`🏬 ${r.magasin.nom} (${r.magasin.adresse})`));
-        console.log(chalk.green(`Chiffre d'affaires: $${r.chiffreAffaires.toFixed(2)}`));
-
-        const tableTop = new Table({
-          head: [chalk.yellow('Produit'), chalk.yellow('Quantité vendue')],
-          style: { head: ['yellow'] }
-        });
-        r.topProduits.forEach(tp => tableTop.push([tp.nom, tp.quantite]));
-        console.log(chalk.magenta('Top produits:'));
-        console.log(tableTop.toString());
-
-        const tableStock = new Table({
-          head: [chalk.blue('Produit'), chalk.blue('Stock restant')],
-          style: { head: ['blue'] }
-        });
-        r.stock.forEach(s => tableStock.push([s.nom, s.stock]));
-        console.log(chalk.magenta('Stock restant:'));
-        console.log(tableStock.toString());
-        console.log();
-      });
-      await pause();
     }
-    if (action === 'dashboard') {
-      const { data: dashboard } = await axios.get(`${API_URL}/maison-mere/dashboard`);
-      console.log(chalk.bold(chalk.cyan('\n=== Tableau de bord des magasins ===\n')));
-      dashboard.forEach(d => {
-        console.log(chalk.bold(`🏬 ${d.magasin.nom} (${d.magasin.adresse})`));
-        console.log(chalk.green(`Chiffre d'affaires: $${d.chiffreAffaires.toFixed(2)}`));
-        if (d.ruptures.length)
-          console.log(chalk.red(`⚠️ Ruptures de stock: ${d.ruptures.join(', ')}`));
-        if (d.surstocks.length)
-          console.log(chalk.yellow(`📦 Surstocks: ${d.surstocks.join(', ')}`));
-        if (d.tendance && d.tendance.length) {
-          console.log(chalk.cyan('Tendance hebdomadaire :'));
-          d.tendance.forEach(t => {
-            console.log(`  - ${t.jour} : $${t.total.toFixed(2)}`);
-          });
-        }
-        console.log();
-      });
-      await pause();
+  ]);
+
+  switch (action) {
+    case 'global_stock':
+      await showGlobalStock();
+      break;
+    case 'sales_report':
+      await showSalesReport();
+      break;
+    case 'view_reappro':
+      await viewReapproRequests();
+      break;
+    case 'exit':
+      console.log(chalk.blue('Au revoir!'));
+      await sequelize.close();
+      process.exit(0);
+  }
+  showMainMenu();
+}
+
+async function showGlobalStock() {
+  try {
+    // Récupération du stock global via l'API
+    const response = await apiClient.getStockGlobal();
+    if (!response.success) {
+      console.log(chalk.red('Erreur lors de la récupération du stock global'));
+      return;
     }
-    if (action === 'exit') break;
+
+    const stocks = response.data;
+    if (stocks.length === 0) {
+      console.log(chalk.yellow('Aucun stock disponible.'));
+      return;
+    }
+
+    const table = new Table({ 
+      head: [chalk.bold('Magasin'), chalk.bold('Produit'), chalk.bold('Prix'), chalk.bold('Stock')] 
+    });
+    
+    stocks.forEach(item => {
+      table.push([
+        item.magasinNom || `Magasin #${item.magasinId}`, 
+        item.produitNom || `Produit #${item.produitId}`, 
+        `${item.prix.toFixed(2)}€`, 
+        item.stock
+      ]);
+    });
+    
+    console.log(table.toString());
+  } catch (error) {
+    console.error(chalk.red('❌ Erreur lors de la récupération du stock global:', error.message));
   }
 }
 
-async function pause() {
-  await inquirer.prompt({
-    type: 'input',
-    name: 'pause',
-    message: chalk.gray('\nAppuie sur [Entrée] pour continuer...')
-  });
+async function showSalesReport() {
+  try {
+    // Récupération du rapport de ventes via l'API
+    const response = await apiClient.getRapportVentes();
+    if (!response.success) {
+      console.log(chalk.red('Erreur lors de la génération du rapport de ventes'));
+      return;
+    }
+
+    const rapport = response.data;
+    
+    // Affichage du chiffre d'affaires total
+    console.log(chalk.bold.green(`\nChiffre d'affaires total: ${rapport.chiffreAffairesTotal ? rapport.chiffreAffairesTotal.toFixed(2) : '0.00'}€`));
+
+    // Produit le plus vendu
+    if (rapport.produitPlusVendu) {
+      console.log(chalk.bold.cyan(`Produit le plus vendu: ${rapport.produitPlusVendu.nom} (${rapport.produitPlusVendu.quantiteTotale} unités)`));
+    }
+
+    // Ventes par magasin
+    if (rapport.ventesParMagasin && rapport.ventesParMagasin.length > 0) {
+      const table = new Table({ 
+        head: [chalk.bold('Magasin'), chalk.bold('Chiffre d\'affaires'), chalk.bold('Nombre de ventes')] 
+      });
+      
+      rapport.ventesParMagasin.forEach(magasin => {
+        table.push([
+          magasin.nom || `Magasin #${magasin.id}`,
+          `${magasin.chiffreAffaires ? magasin.chiffreAffaires.toFixed(2) : '0.00'}€`,
+          magasin.nombreVentes || 0
+        ]);
+      });
+      
+      console.log('\n' + table.toString());
+    }
+  } catch (error) {
+    console.error(chalk.red('❌ Erreur lors de la génération du rapport de ventes:', error.message));
+  }
 }
 
-mainMenu();
+async function viewReapproRequests() {
+  try {
+    // Récupération des demandes de réapprovisionnement via l'API
+    const response = await apiClient.getDemandesReappro();
+    if (!response.success) {
+      console.log(chalk.red('Erreur lors de la récupération des demandes de réapprovisionnement'));
+      return;
+    }
+
+    const demandes = response.data.filter(d => d.statut === 'en_attente');
+    if (demandes.length === 0) {
+      console.log(chalk.yellow('Aucune demande de réapprovisionnement en attente.'));
+      return;
+    }
+
+    const table = new Table({ 
+      head: [
+        chalk.bold('ID'), 
+        chalk.bold('Magasin'), 
+        chalk.bold('Produit'), 
+        chalk.bold('Qté Demandée'), 
+        chalk.bold('Date')
+      ] 
+    });
+    
+    demandes.forEach(demande => {
+      table.push([
+        demande.id,
+        demande.magasinNom || `Magasin #${demande.magasinId}`,
+        demande.produitNom || `Produit #${demande.produitId}`,
+        demande.quantiteDemandee,
+        new Date(demande.createdAt).toLocaleDateString()
+      ]);
+    });
+    
+    console.log(table.toString());
+  } catch (error) {
+    console.error(chalk.red('❌ Erreur lors de la récupération des demandes de réapprovisionnement:', error.message));
+  }
+}
+
+// --- Démarrage de l'application ---
+async function start() {
+  try {
+    console.log(chalk.bold.yellow('--- Console Maison Mère (Version Microservices) ---'));
+    
+    // Initialisation du client API
+    initApiClient();
+    
+    // Attendre un peu que l'API Gateway soit prête
+    console.log(chalk.cyan('🔄 Vérification de la disponibilité de l\'API Gateway...'));
+    try {
+      await apiClient.healthCheck();
+      console.log(chalk.green('✅ API Gateway disponible'));
+    } catch (error) {
+      console.log(chalk.yellow('⚠️  API Gateway non disponible, certaines fonctionnalités pourraient être limitées'));
+    }
+    
+    await showMainMenu();
+  } catch (error) {
+    console.error(chalk.red('Une erreur critique est survenue:', error));
+    await sequelize.close();
+    process.exit(1);
+  }
+}
+
+start();
