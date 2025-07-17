@@ -216,6 +216,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+      POSTGRES_USER: posuser
+      POSTGRES_PASSWORD: pospass
+      POSTGRES_DB: posdb
+      POSTGRES_HOST: db
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: ["node", "src/appConsole.js"]
 
   # =====================================
   # MICROSERVICE STOCK (2 instances)
@@ -390,6 +398,12 @@ services:
       - INSTANCE_NAME=Legacy Service
       - DATABASE_TYPE=sqlite
       - DATABASE_PATH=/app/database.sqlite
+      POSTGRES_USER: posuser
+      POSTGRES_PASSWORD: pospass
+      POSTGRES_DB: posdb
+      POSTGRES_HOST: db
+    working_dir: /app
+    command: ["node", "src/api/servers.js"]
     ports:
       - "3000:3000"
     volumes:
@@ -434,6 +448,15 @@ services:
     command: sh /kong-config.sh
     networks:
       - pos-network
+      POSTGRES_USER: posuser
+      POSTGRES_PASSWORD: pospass
+      POSTGRES_DB: posdb
+      POSTGRES_HOST: db
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: ["node", "src/maisonMereConsole.js"]
+
 
   # =====================================
   # MONITORING : PROMETHEUS
