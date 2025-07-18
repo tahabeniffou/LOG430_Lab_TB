@@ -1,20 +1,25 @@
-# 🏪 Système POS Microservices - Laboratoire 6 SAGA PATTERN
+# 🏪 Système POS Microservices - Laboratoires 6 & 7
 ## Architecture Logicielle (LOG430) - Été 2025
 
 [![Docker](https://img.shields.io/badge/Docker-Containerized-blue?logo=docker)](https://www.docker.com/)
 [![Kong](https://img.shields.io/badge/Kong-API%20Gateway-green?logo=kong)](https://konghq.com/)
 [![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-orange?logo=prometheus)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-Dashboards-red?logo=grafana)](https://grafana.com/)
-[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-brightgreen?logo=github)](https://github.com/features/actions)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-Messaging-orange?logo=rabbitmq)](https://www.rabbitmq.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue?logo=postgresql)](https://www.postgresql.org/)
 [![Saga Pattern](https://img.shields.io/badge/Pattern-Saga%20Orchestrator-purple?logo=star)](https://microservices.io/patterns/data/saga.html)
+[![Event Driven](https://img.shields.io/badge/Architecture-Event%20Driven-green?logo=apache-kafka)](https://microservices.io/patterns/data/event-driven-architecture.html)
 
 ---
 
 ## 📋 Vue d'ensemble
 
-Système **Point of Sale (POS)** avec **Pattern Saga** pour transactions distribuées, observabilité complète et compensation automatique des échecs.
+Système **Point of Sale (POS)** hybride intégrant architecture microservices avec patterns avancés :
+- **Lab 6** : Saga Orchestrator pour transactions distribuées
+- **Lab 7** : Architecture Event-Driven avec RabbitMQ
+- **Architecture hybride** : POS legacy + microservices modernes
 
-### 🎯 Objectifs du Laboratoire 6 - SAGA PATTERN
+### 🎯 Laboratoire 6 - SAGA ORCHESTRATOR
 
 - ✅ **Saga Orchestrator** : 3 étapes avec compensation automatique
 - ✅ **Machine d'État** : Diagramme complet avec transitions
@@ -22,7 +27,15 @@ Système **Point of Sale (POS)** avec **Pattern Saga** pour transactions distrib
 - ✅ **Tests Automatisés** : Scénarios succès/échec avec CI/CD
 - ✅ **Résilience** : 100% des échecs compensés automatiquement
 
-### 🔄 **SAGA PATTERN - 3 ÉTAPES**
+### 🎯 Laboratoire 7 - EVENT-DRIVEN ARCHITECTURE
+
+- ✅ **Event Store** : Persistance des événements avec replay
+- ✅ **RabbitMQ** : Message broker pour communication asynchrone
+- ✅ **Saga Choreography** : Coordination décentralisée via événements
+- ✅ **Read Models** : CQRS avec projections optimisées
+- ✅ **Resilience** : Circuit breakers et retry patterns
+
+### 🔄 **SAGA ORCHESTRATOR - 3 ÉTAPES**
 
 ```
 📦 STOCK_RESERVE → 💳 PAYMENT_DEBIT → 🛒 SALE_CREATE
@@ -32,8 +45,15 @@ Système **Point of Sale (POS)** avec **Pattern Saga** pour transactions distrib
    🔄 No compensation  🔄 Credit refund  🔄 Full rollback
 ```
 
-**Scénario Métier** : Vente avec réservation stock → débit paiement → création vente finale
-**Documentation** : [📊 State Machine Diagram](documentation/SAGA_STATE_MACHINE.md)
+### 🎭 **SAGA CHOREOGRAPHY - ÉVÉNEMENTS**
+
+```
+📦 StockReserved → 💳 PaymentDebited → 🛒 SaleCompleted
+        ↓                  ↓                ↓
+   ❌ StockFailed     ❌ PaymentFailed   ❌ SaleFailed
+        ↓                  ↓                ↓
+   🔄 StockReleased   � PaymentRefunded 🔄 SaleRollback
+```
 
 ---
 
@@ -77,8 +97,10 @@ Système **Point of Sale (POS)** avec **Pattern Saga** pour transactions distrib
 | Composant | Technologie | Rôle |
 |-----------|-------------|------|
 | **API Gateway** | Kong 3.4 | Routage, load balancing, CORS |
-| **Microservices** | Node.js + Express | 7 services DDD |
-| **Base de Données** | PostgreSQL 15 | 7 bases dédiées |
+| **Microservices** | Node.js + Express | 14 services DDD |
+| **Base de Données** | PostgreSQL 15 | 14 bases dédiées |
+| **Message Broker** | RabbitMQ | Communication asynchrone |
+| **Event Store** | PostgreSQL | Persistance événements |
 | **Monitoring** | Prometheus + Grafana | Métriques et dashboards |
 | **Conteneurisation** | Docker + Docker Compose | Orchestration |
 | **Legacy** | SQLite | Migration données |
@@ -90,14 +112,39 @@ Système **Point of Sale (POS)** avec **Pattern Saga** pour transactions distrib
 ### Prérequis
 - **Docker Desktop** installé et démarré
 - **8GB RAM** minimum recommandé
-- **Ports disponibles** : 3000-3017, 8000-8001, 9090, 3008
+- **Ports disponibles** : 3000-3025, 8000-8001, 9090, 3008, 5672, 15672
 
 ### 1. Clone et démarrage
+
+#### Option A : Architecture complète (Lab 6 + Lab 7)
 ```bash
 git clone https://github.com/tahabeniffou/LOG430_Lab_TB.git
 cd LOG430_Lab_TB
 
 # Démarrer tous les services
+docker-compose up -d
+
+# Vérifier le statut
+docker-compose ps
+```
+
+#### Option B : Lab 6 uniquement (Saga Orchestrator)
+```bash
+# Démarrer configuration Lab 6
+docker-compose -f docker-compose-saga.yml up -d
+```
+
+#### Option C : Lab 7 uniquement (Event-Driven)
+```bash
+# Démarrer configuration Lab 7
+docker-compose -f docker-compose-lab7.yml up -d
+```
+
+### 2. Configuration Kong Gateway
+```bash
+# Configurer les routes (Windows PowerShell)
+cd config
+bash kong-config.sh
 docker-compose up -d
 
 # Vérifier le statut

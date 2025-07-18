@@ -143,3 +143,42 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+
+  # ===========================================
+  # SAGA SERVICES (LAB 6 & LAB 7)
+  # ===========================================
+  
+  # Saga Orchestrator (Lab 6)
+  - job_name: 'saga-orchestrator'
+    static_configs:
+      - targets: ['host.docker.internal:8010']
+    scrape_interval: 5s
+    metrics_path: '/metrics'
+    
+  # Reclamation Service (Lab 7)
+  - job_name: 'reclamation-service'
+    static_configs:
+      - targets: ['host.docker.internal:8011']
+    scrape_interval: 10s
+    metrics_path: '/metrics'
+
+  # Validation Service (Lab 7)
+  - job_name: 'validation-service'
+    static_configs:
+      - targets: ['host.docker.internal:8012']
+    scrape_interval: 10s
+    metrics_path: '/metrics'
+
+  # Notification Service (Lab 7)
+  - job_name: 'notification-service'
+    static_configs:
+      - targets: ['host.docker.internal:8013']
+    scrape_interval: 10s
+    metrics_path: '/metrics'
+
+  # Payment Service (Lab 7)
+  - job_name: 'payment-service'
+    static_configs:
+      - targets: ['host.docker.internal:8014']
+    scrape_interval: 10s
+    metrics_path: '/metrics'

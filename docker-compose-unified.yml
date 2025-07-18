@@ -1,0 +1,392 @@
+services:
+  # Base de données principale
+  postgres-main:
+    image: postgres:15
+    container_name: postgres-main
+    environment:
+      POSTGRES_DB: pos_db
+      POSTGRES_USER: pos_user
+      POSTGRES_PASSWORD: pos_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_main_data:/var/lib/postgresql/data
+      - ./database-init-postgresql.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pos_user -d pos_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pos-network
+
+  # ================== LAB 6 - SAGA ORCHESTRATOR ==================
+  
+  # Base de données pour Saga Orchestrator
+  postgres-saga:
+    image: postgres:15
+    container_name: postgres-saga
+    environment:
+      POSTGRES_DB: saga_db
+      POSTGRES_USER: saga_user
+      POSTGRES_PASSWORD: saga_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_saga_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saga_user -d saga_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pos-network
+
+  # Saga Orchestrator Service (Lab 6)
+  saga-orchestrator:
+    build:
+      context: ./microservices/saga-orchestrator-service
+      dockerfile: Dockerfile
+    container_name: saga-orchestrator
+    ports:
+      - "3020:3020"
+    environment:
+      NODE_ENV: production
+      PORT: 3020
+      DB_HOST: postgres-saga
+      DB_PORT: 5432
+      DB_NAME: saga_db
+      DB_USER: saga_user
+      DB_PASSWORD: saga_password
+    depends_on:
+      postgres-saga:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # Payment Service (Lab 6)
+  payment-service:
+    build:
+      context: ./microservices/payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    ports:
+      - "3021:3021"
+    environment:
+      NODE_ENV: production
+      PORT: 3021
+      DB_HOST: postgres-main
+      DB_PORT: 5432
+      DB_NAME: pos_db
+      DB_USER: pos_user
+      DB_PASSWORD: pos_password
+    depends_on:
+      postgres-main:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # Notification Service (Lab 6)
+  notification-service:
+    build:
+      context: ./microservices/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "3022:3022"
+    environment:
+      NODE_ENV: production
+      PORT: 3022
+    networks:
+      - pos-network
+
+  # ================== LAB 7 - EVENT DRIVEN ==================
+  
+  # RabbitMQ Message Broker (Lab 7)
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq-broker
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - pos-network
+
+  # Event Store Database (Lab 7)
+  postgres-eventstore:
+    image: postgres:15
+    container_name: postgres-eventstore
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: eventstore
+      POSTGRES_USER: eventstore_user
+      POSTGRES_PASSWORD: eventstore_pass
+    volumes:
+      - postgres_eventstore_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventstore_user -d eventstore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pos-network
+
+  # Reclamation Service (Lab 7)
+  reclamation-service:
+    build:
+      context: ./microservices/reclamation-service
+      dockerfile: Dockerfile
+    container_name: reclamation-service
+    ports:
+      - "8011:8011"
+    environment:
+      NODE_ENV: production
+      PORT: 8011
+      EVENTSTORE_URL: postgresql://eventstore_user:eventstore_pass@postgres-eventstore:5432/eventstore
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres-eventstore:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # Notification Service Event-Driven (Lab 7)
+  notification-service-event:
+    build:
+      context: ./microservices/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service-event
+    ports:
+      - "8012:8012"
+    environment:
+      NODE_ENV: production
+      PORT: 8012
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+
+
+  # ================== MICROSERVICES DE BASE ==================
+
+  # Service Produit
+  produit-service:
+    build:
+      context: ./microservices/produit-service
+      dockerfile: Dockerfile
+    container_name: produit-service
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres-main
+      DB_PORT: 5432
+      DB_NAME: pos_db
+      DB_USER: pos_user
+      DB_PASSWORD: pos_password
+    depends_on:
+      postgres-main:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # Service Stock
+  stock-service:
+    build:
+      context: ./microservices/stock-service
+      dockerfile: Dockerfile
+    container_name: stock-service
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DB_HOST: postgres-main
+      DB_PORT: 5432
+      DB_NAME: pos_db
+      DB_USER: pos_user
+      DB_PASSWORD: pos_password
+    depends_on:
+      postgres-main:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # Service Vente
+  vente-service:
+    build:
+      context: ./microservices/vente-service
+      dockerfile: Dockerfile
+    container_name: vente-service
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DB_HOST: postgres-main
+      DB_PORT: 5432
+      DB_NAME: pos_db
+      DB_USER: pos_user
+      DB_PASSWORD: pos_password
+    depends_on:
+      postgres-main:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # Service Reporting
+  reporting-service:
+    build:
+      context: ./microservices/reporting-service
+      dockerfile: Dockerfile
+    container_name: reporting-service
+    ports:
+      - "3004:3004"
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      DB_HOST: postgres-main
+      DB_PORT: 5432
+      DB_NAME: pos_db
+      DB_USER: pos_user
+      DB_PASSWORD: pos_password
+    depends_on:
+      postgres-main:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # ================== INFRASTRUCTURE ==================
+
+  # Kong API Gateway
+  kong-gateway:
+    image: kong:3.4
+    container_name: kong-gateway
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+      - "8001:8001"
+      - "8444:8444"
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: postgres-kong
+      KONG_PG_PORT: 5432
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    depends_on:
+      postgres-kong:
+        condition: service_healthy
+    networks:
+      - pos-network
+
+  # Base de données Kong
+  postgres-kong:
+    image: postgres:15
+    container_name: postgres-kong
+    environment:
+      POSTGRES_DB: kong
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: kong
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_kong_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong -d kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pos-network
+
+  # Kong Migrations
+  kong-migrations:
+    image: kong:3.4
+    container_name: kong-migrations
+    depends_on:
+      postgres-kong:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: postgres-kong
+      KONG_PG_PORT: 5432
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+    command: kong migrations bootstrap
+    restart: on-failure
+    networks:
+      - pos-network
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-unified
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - pos-network
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-unified
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    networks:
+      - pos-network
+
+volumes:
+  postgres_main_data:
+  postgres_saga_data:
+  postgres_eventstore_data:
+  postgres_kong_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  pos-network:
+    driver: bridge

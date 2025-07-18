@@ -1,0 +1,155 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "RabbitMQ Topics Activity Dashboard",
+    "tags": ["rabbitmq", "topics", "messaging"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Messages Published",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(rabbitmq_global_messages_published_total[5m])",
+            "legendFormat": "Messages/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 2
+          }
+        },
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Total Messages Delivered",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(rabbitmq_global_messages_delivered_total[5m])",
+            "legendFormat": "Messages/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "decimals": 2
+          }
+        },
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Queue Messages Count",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rabbitmq_queue_messages",
+            "legendFormat": "{{queue}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
+      },
+      {
+        "id": 4,
+        "title": "Exchange Messages In/Out",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(rabbitmq_exchange_messages_published_in_total[5m])",
+            "legendFormat": "{{exchange}} - In"
+          },
+          {
+            "expr": "rate(rabbitmq_exchange_messages_published_out_total[5m])",
+            "legendFormat": "{{exchange}} - Out"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
+      },
+      {
+        "id": 5,
+        "title": "Connection Count",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rabbitmq_connections",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 6,
+        "title": "Channel Count",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rabbitmq_channels",
+            "legendFormat": "Active Channels"
+          }
+        ],
+        "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 7,
+        "title": "Message Rates by Queue",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(rabbitmq_queue_messages_published_total[5m])",
+            "legendFormat": "{{queue}} - Published"
+          },
+          {
+            "expr": "rate(rabbitmq_queue_messages_delivered_total[5m])",
+            "legendFormat": "{{queue}} - Delivered"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 14}
+      },
+      {
+        "id": 8,
+        "title": "Memory Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rabbitmq_process_resident_memory_bytes",
+            "legendFormat": "Memory Usage (bytes)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 22}
+      },
+      {
+        "id": 9,
+        "title": "Disk Space Used",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rabbitmq_disk_space_available_bytes",
+            "legendFormat": "Available Disk Space"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 22}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "5s",
+    "schemaVersion": 27,
+    "version": 1
+  }
+}
